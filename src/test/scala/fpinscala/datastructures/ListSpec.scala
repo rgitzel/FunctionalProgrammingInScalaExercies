@@ -167,4 +167,20 @@ class ListSpec extends FlatSpec with Matchers {
   it should "return 3 for a three-item list" in {
     List.lengthLeft(List(2,3,4)) should be (3)
   }
+
+
+  behavior of "reverse"
+
+  it should "return Nil for Nil" in {
+    List.reverse(Nil) should be (Nil)
+  }
+
+  it should "return a single-item list unchanged" in {
+    List.reverse(List(1)) should be (List(1))
+  }
+
+  it should "return a multi-item list reversed" in {
+    List.reverse(List(1, 2, 3)) should be (List(3, 2, 1))
+  }
+
 }

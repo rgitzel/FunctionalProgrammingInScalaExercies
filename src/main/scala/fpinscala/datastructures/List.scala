@@ -112,5 +112,7 @@ def sum(ints: List[Int]): Int = ints match { // A function that uses pattern mat
   def lengthLeft[A](l: List[A]): Int = foldLeft(l, 0)((b, a) => b + 1)
 
 
+  def reverse[A](l: List[A]): List[A] = foldLeft(l, Nil:List[A]){ (b, a) => Cons(a, b) }
+
   def map[A,B](l: List[A])(f: A => B): List[B] = sys.error("todo")
 }
