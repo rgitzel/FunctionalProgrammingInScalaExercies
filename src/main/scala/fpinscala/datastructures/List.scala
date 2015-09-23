@@ -120,19 +120,24 @@ def sum(ints: List[Int]): Int = ints match { // A function that uses pattern mat
 
   // 3.13
 
+  // using 'reverse' first seems a cheat, but... how else to do it? you really do need
+  //  to get to the other end of the list before folding... and simply calling foldLeft
+  //  won't do it, as your function doesn't get access to the list being folded
+
   def foldRightUsingLeft[A,B](as: List[A], z: B)(f: (A, B) => B): B =
     foldLeft(reverse(as), z)((b,a) => f(a, b))
 
   def foldLeftUsingRight[A,B](as: List[A], z: B)(f: (B, A) => B): B =
     foldRight(reverse(as), z)((a,b) => f(b, a))
 
+  
   // 3.14
   def appendWithFold[A](a1: List[A], a2: List[A]): List[A] =
-    foldRight(a1, a2)((item, list) => Cons(item, list))
+    foldRightUsingLeft(a1, a2)((item, list) => Cons(item, list))
 
   // 3.15
   def concatLists[A](lists: List[List[A]]): List[A] =
-    foldRight[List[A],List[A]](lists, Nil){(list, resultList) =>
+    foldRightUsingLeft[List[A],List[A]](lists, Nil){(list, resultList) =>
       appendWithFold(list, resultList)
     }
 
