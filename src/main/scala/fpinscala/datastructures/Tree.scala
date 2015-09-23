@@ -36,5 +36,32 @@ object Tree {
         Branch(map(left)(f), map(right)(f))
     }
 
-  // 3.29
+  // 3.29... the trick seems to be you need to provide TWO functions, one
+  //  to do something with the A value of a leaf, and one to do something to "combine"
+  //  the B values of the two subtrees of a branch... you could probably combine
+  //  them, but then you might be tempted to recurse? oh! isn't there a "fold" in Play's
+  //  form processing somewhere that has alternate handlers, one for error, one for success?
+  //  that seems the same idea... originally I made three parameters lists to make type inference
+  //  easier, but all the extra ()'s made the fold calls harder to read... explicitly adding
+  //  the types to each call isn't great either, but looks better
+  def fold[A,B](t: Tree[A], z: A => B, combine: (B,B) => B): B =
+    t match {
+      case Leaf(value) =>
+        z(value)
+      case Branch(left, right) =>
+        combine(fold(left, z, combine), fold(right, z, combine))
+    }
+
+  def sizeWithFold[A](t: Tree[A]): Int = fold[A,Int](t, _ => 1, _ + _ + 1)
+
+  def maximumWithFold(t: Tree[Int]): Int = fold[Int,Int](t, v => v, _.max(_))
+
+  def depthWithFold[A](t: Tree[A]): Int = fold[A,Int](t, _ => 1, _.max(_) + 1)
+
+  def mapWithFold[A,B](t: Tree[A])(f: A => B): Tree[B] =
+    fold[A,Tree[B]](
+      t,
+      v => Leaf(f(v)),
+      Branch(_, _)
+    )
 }
