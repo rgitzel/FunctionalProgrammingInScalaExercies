@@ -174,10 +174,41 @@ def sum(ints: List[Int]): Int = ints match { // A function that uses pattern mat
       case _ => throw new IllegalArgumentException("lists should be same size")
     }
 
+  // 3.23
   def zipWith[A,B,C](list1: List[A], list2: List[B], f: (A,B) => C): List[C] =
     (list1, list2) match {
       case (Nil, Nil) => Nil
       case (Cons(h1, t1), Cons(h2, t2)) => Cons(f(h1, h2), zipWith(t1, t2, f))
       case _ => throw new IllegalArgumentException("lists should be same size")
     }
+
+
+  // 3.24
+  def hasSubsequence[A](list: List[A], candidate: List[A]): Boolean =
+    list match {
+      case Nil =>
+        false // seems reasonable
+      case Cons(listHead, listTail) =>
+        if(length(list) < length(candidate))
+          false
+        else
+          candidate match {
+            case Nil =>
+              true // seems a reasonable assumption
+            case Cons(candidateHead, candidateTail) =>
+              if(listHead == candidateHead)
+                sameInitialItems(listTail, candidateTail)
+              else
+                hasSubsequence(listTail, candidate)
+          }
+    }
+
+  def sameInitialItems[A](a: List[A], b: List[A]): Boolean = {
+    (a, b) match {
+      case (Cons(aHead, aTail), Cons(bHead, bTail)) =>
+        (aHead == bHead) && sameInitialItems(aTail, bTail)
+      case _ =>
+        true
+    }
+  }
 }

@@ -371,7 +371,57 @@ class ListSpec extends FlatSpec with Matchers {
     List.addingCorrespondingLists(List(2, 3, 4), List(1, 2, 3)) should be (List(3, 5, 7))
   }
 
+  behavior of "hasSubsequence"
 
+  // I'm going to do this proper TDD style, writing each test, making it work, iterate,
+  //  even if the implementation is obviously not going to work for future tests
+
+  it should "return false for Nil list" in {
+    List.hasSubsequence(Nil, List(1)) should be (false)
+  }
+
+  it should "return false for both Nil" in {
+    List.hasSubsequence(Nil, Nil) should be (false)
+  }
+
+  it should "return true for Nil subsequence" in {
+    List.hasSubsequence(List(1), Nil) should be (true)
+  }
+
+  it should "return true for itself" in {
+    List.hasSubsequence(List(1), List(1)) should be (true)
+  }
+
+  it should "return false for two different single-item lists" in {
+    List.hasSubsequence(List(1), List(2)) should be (false)
+  }
+
+  it should "return false for when checked list is too small" in {
+    List.hasSubsequence(List(1), List(1, 2)) should be (false)
+  }
+
+  it should "return true simplest case where sub isn't the head" in {
+    List.hasSubsequence(List(1, 2), List(2)) should be (true)
+  }
+
+  it should "return true for same lists, with more than 1 item" in {
+    List.hasSubsequence(List(1, 2), List(1, 2)) should be (true)
+  }
+
+  it should "return false when heads are same. but rest isn't" in {
+    List.hasSubsequence(List(1, 2), List(1, 3)) should be (false)
+  }
+
+  it should "return true for multi-item candidate in middle" in {
+    List.hasSubsequence(List(1, 2, 3, 4), List(2, 3)) should be (true)
+  }
+
+  it should "return true for multi-item candidate at the end" in {
+    List.hasSubsequence(List(1, 2, 3, 4), List(3, 4)) should be (true)
+  }
+
+  // then once all those tests passed, I refactored to stream-line things to be more like
+  //  I would have written in the first place
 
   behavior of "zipWith"
 
