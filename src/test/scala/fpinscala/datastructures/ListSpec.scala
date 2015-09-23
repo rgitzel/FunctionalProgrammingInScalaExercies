@@ -183,4 +183,212 @@ class ListSpec extends FlatSpec with Matchers {
     List.reverse(List(1, 2, 3)) should be (List(3, 2, 1))
   }
 
+
+  behavior of "string concatenation"
+
+  def appendRight(s: String, list: List[String]) = Cons(s, list)
+  def appendLeft(list: List[String], s: String) = Cons(s, list)
+
+  val strings = List("a", "b", "c")
+
+  it should "be in normal order from the right" in {
+    List.foldLeft(strings, Nil: List[String])(appendLeft) should be (List("c", "b", "a"))
+  }
+
+  it should "be in normals order from the right" in {
+    List.foldRight(strings, Nil: List[String])(appendRight) should be (strings)
+  }
+
+
+  behavior of "implementing each other"
+
+  it should "look like right, but be left" in {
+    val proper = List.foldRight(strings, Nil: List[String])(appendRight)
+    List.foldRightUsingLeft(strings, Nil: List[String])(appendRight) should be (proper)
+  }
+
+  it should "look like left, but be right" in {
+    val proper = List.foldLeft(strings, Nil: List[String])(appendLeft)
+    List.foldLeftUsingRight(strings, Nil: List[String])(appendLeft) should be (proper)
+  }
+
+
+
+  behavior of "append"
+
+  it should "Nil + Nil = Nil" in {
+    List.append[String](Nil, Nil) should be (Nil)
+  }
+
+  it should "List + Nil = List" in {
+    List.append[String](strings, Nil) should be (strings)
+  }
+
+  it should "Nil + Listl = List" in {
+    List.append[String](Nil, strings) should be (strings)
+  }
+
+  it should "combine two lists" in {
+    List.append[String](strings, List("e", "f")) should be (List("a", "b", "c", "e", "f"))
+  }
+
+
+  behavior of "appendWithFold"
+
+  it should "Nil + Nil = Nil" in {
+    List.appendWithFold[String](Nil, Nil) should be (Nil)
+  }
+
+  it should "List + Nil = List" in {
+    List.appendWithFold[String](strings, Nil) should be (strings)
+  }
+
+  it should "Nil + Listl = List" in {
+    List.appendWithFold[String](Nil, strings) should be (strings)
+  }
+
+  it should "combine two lists" in {
+    List.appendWithFold[String](strings, List("e", "f")) should be (List("a", "b", "c", "e", "f"))
+  }
+
+
+  behavior of "concatLists"
+
+  it should "return Nil for Nil" in {
+    List.concatLists(Nil) should be (Nil)
+  }
+
+  it should "return itself for a single list" in {
+    List.concatLists(List(List(1,2,3))) should be (List(1,2,3))
+  }
+
+  it should "return combined for multiple lists" in {
+    List.concatLists(List(List(1,2,3), List(7,8,9), List(0, 1, 2))) should be (List(1, 2, 3, 7, 8, 9, 0, 1, 2))
+  }
+
+
+  behavior of "addOne"
+
+  it should "return Nil for Nil" in {
+    List.addOne(Nil) should be (Nil)
+  }
+
+  it should "add successfully" in {
+    List.addOne(List(1,2,3)) should be (List(2,3,4))
+  }
+
+
+  behavior of "doublesToStrings"
+
+  it should "return Nil for Nil" in {
+    List.doublesToStrings(Nil) should be (Nil)
+  }
+
+  it should "add successfully" in {
+    List.doublesToStrings(List(1.0,2.0,3.0)) should be (List("1.0", "2.0", "3.0"))
+  }
+
+
+
+  behavior of "map"
+
+  it should "return Nil for Nil" in {
+    List.map(Nil)(_.toString) should be (Nil)
+  }
+
+  it should "map a list" in {
+    List.map(List(1.0,2.0,3.0))(_.toString) should be (List("1.0", "2.0", "3.0"))
+  }
+
+
+  behavior of "filter"
+
+  def isEven(i: Int) = i % 2 == 0
+
+  it should "return Nil for Nil" in {
+    List.filter[Int](Nil)(isEven) should be (Nil)
+  }
+
+  it should "map a list" in {
+    List.filter(List(1,2,3,4,5))(isEven) should be (List(2,4))
+  }
+
+
+  behavior of "flatMap"
+
+  def fm(i: Int) = List(i.toString, " ")
+
+  it should "return Nil for Nil" in {
+    List.flatMap[Int,String](Nil)(fm) should be (Nil)
+  }
+
+  it should "map a list" in {
+    List.flatMap(List(1, 2, 3))(fm) should be (List("1", " ", "2", " ", "3", " "))
+  }
+
+  it should "pass the book's test" in {
+    List.flatMap(List(1, 2, 3))(i => List(i, i)) should be (List(1, 1, 2, 2, 3, 3))
+  }
+
+  behavior of "flatMap2"
+
+  it should "return Nil for Nil" in {
+    List.flatMap2[Int,String](Nil)(fm) should be (Nil)
+  }
+
+  it should "map a list" in {
+    List.flatMap2(List(1, 2, 3))(fm) should be (List("1", " ", "2", " ", "3", " "))
+  }
+
+  it should "pass the book's test" in {
+    List.flatMap2(List(1, 2, 3))(i => List(i, i)) should be (List(1, 1, 2, 2, 3, 3))
+  }
+
+
+  behavior of "filterUsingFlatMap"
+
+  it should "return Nil for Nil" in {
+    List.filterUsingFlatMap[Int](Nil)(isEven) should be (Nil)
+  }
+
+  it should "map a list" in {
+    List.filterUsingFlatMap(List(1,2,3,4,5))(isEven) should be (List(2,4))
+  }
+
+
+
+  behavior of "addingCorrespondingLists"
+
+  it should "return Nil for Nil" in {
+    List.addingCorrespondingLists(Nil, Nil) should be (Nil)
+  }
+
+  it should "add two lists" in {
+    List.addingCorrespondingLists(List(1,2,3), List(2, 3, 4)) should be (List(3, 5, 7))
+  }
+
+  it should "add two lists the same way in different order" in {
+    List.addingCorrespondingLists(List(2, 3, 4), List(1, 2, 3)) should be (List(3, 5, 7))
+  }
+
+
+
+  behavior of "zipWith"
+
+  def zipF(i: Int, d: Double) = (i*d).toString
+  def zipF2(d: Double, i: Int) = (i*d).toString
+
+  it should "return Nil for Nil" in {
+    List.zipWith(Nil, Nil, zipF) should be (Nil)
+  }
+
+  it should "add two lists" in {
+    List.zipWith(List(1,2,3), List(2.0, 3.0, 4.0), zipF) should be (List("2.0", "6.0", "12.0"))
+  }
+
+  it should "add two lists the same way in different order" in {
+    List.zipWith(List(2.0, 3.0, 4.0), List(1,2,3), zipF2) should be (List("2.0", "6.0", "12.0"))
+  }
 }
+
+
