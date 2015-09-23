@@ -187,28 +187,51 @@ def sum(ints: List[Int]): Int = ints match { // A function that uses pattern mat
   def hasSubsequence[A](list: List[A], candidate: List[A]): Boolean =
     list match {
       case Nil =>
-        false // seems reasonable
+        false // seems reasonable, an empty list has no subsequences?
       case Cons(listHead, listTail) =>
-        if(length(list) < length(candidate))
-          false
-        else
-          candidate match {
-            case Nil =>
-              true // seems a reasonable assumption
-            case Cons(candidateHead, candidateTail) =>
-              if(listHead == candidateHead)
-                sameInitialItems(listTail, candidateTail)
-              else
-                hasSubsequence(listTail, candidate)
-          }
+        startsWith(list, candidate) || hasSubsequence(listTail, candidate)
     }
 
-  def sameInitialItems[A](a: List[A], b: List[A]): Boolean = {
+  // does list 'a' contain all of 'b' starting from the top?
+  def startsWith[A](a: List[A], b: List[A]): Boolean =
     (a, b) match {
       case (Cons(aHead, aTail), Cons(bHead, bTail)) =>
-        (aHead == bHead) && sameInitialItems(aTail, bTail)
+        (aHead == bHead) && startsWith(aTail, bTail)
+      case (Nil, Cons(_,_)) =>
+        false
       case _ =>
         true
+    }
+
+  // this is what I wrote getting the tests to pass... then it was reduced to the above
+  def originalImplementationForComparison {
+
+    def hasSubsequence[A](list: List[A], candidate: List[A]): Boolean =
+      list match {
+        case Nil =>
+          false // seems reasonable
+        case Cons(listHead, listTail) =>
+          if(length(list) < length(candidate))
+            false
+          else
+            candidate match {
+              case Nil =>
+                true // seems a reasonable assumption
+              case Cons(candidateHead, candidateTail) =>
+                if(listHead == candidateHead)
+                  sameInitialItems(listTail, candidateTail)
+                else
+                  hasSubsequence(listTail, candidate)
+            }
+      }
+
+    def sameInitialItems[A](a: List[A], b: List[A]): Boolean = {
+      (a, b) match {
+        case (Cons(aHead, aTail), Cons(bHead, bTail)) =>
+          (aHead == bHead) && sameInitialItems(aTail, bTail)
+        case _ =>
+          true
+      }
     }
   }
 }
