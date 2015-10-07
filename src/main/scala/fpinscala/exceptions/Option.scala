@@ -1,0 +1,112 @@
+package fpinscala.exceptions
+
+import scala.{Option => _, Some => _, Either => _, _} // hide std library `Option`, `Some` and `Either`, since we are writing our own in this chapter
+
+
+sealed trait Option[+A] {
+  def map[B](f: A => B): Option[B] =
+    this match {
+      case Some(a) => Some(f(a))
+      case _ => None
+    }
+
+  def getOrElse[B>:A](default: => B): B =
+    this match {
+      case Some(b) => b
+      case _ => default
+    }
+
+  def flatMap[B](f: A => Option[B]): Option[B] =
+//    this match {
+//      case Some(a) => f(a)
+//      case _ => None
+//    }
+    map(f).getOrElse(None)
+
+  // I'm not sure how to do this without a match...
+  def orElse[B>:A](ob: => Option[B]): Option[B] =
+    this match {
+      case None => ob
+      case s => s
+    }
+
+  def filter(f: A => Boolean): Option[A] =
+    flatMap(i =>
+      if(f(i)) this else None
+    )
+}
+
+
+case class Some[+A](get: A) extends Option[A]
+case object None extends Option[Nothing]
+
+object Option {
+  def failingFn(i: Int): Int = {
+    val y: Int = throw new Exception("fail!") // `val y: Int = ...` declares `y` as having type `Int`, and sets it equal to the right hand side of the `=`.
+    try {
+      val x = 42 + 5
+      x + y
+    }
+    catch { case e: Exception => 43 } // A `catch` block is just a pattern matching block like the ones we've seen. `case e: Exception` is a pattern that matches any `Exception`, and it binds this value to the identifier `e`. The match returns the value 43.
+  }
+
+  def failingFn2(i: Int): Int = {
+    try {
+      val x = 42 + 5
+      x + ((throw new Exception("fail!")): Int) // A thrown Exception can be given any type; here we're annotating it with the type `Int`
+    }
+    catch { case e: Exception => 43 }
+  }
+
+  def mean(xs: Seq[Double]): Option[Double] =
+    if (xs.isEmpty) None
+    else Some(xs.sum / xs.length)
+
+  def variance(xs: Seq[Double]): Option[Double] = {
+    mean(xs).flatMap{ m =>
+      val pows = xs.map{ x =>
+        math.pow(x - m, 2)
+      }
+      mean(pows)
+    }
+  }
+
+  def map2[A,B,C](a: Option[A], b: Option[B])(f: (A, B) => C): Option[C] =
+    a.flatMap( av =>
+      b.map( bv =>
+        f(av, bv)
+      )
+    )
+
+  def sequence[A](a: List[Option[A]]): Option[List[A]] = {
+//    // this works, but strikes me as inelegant :(
+//    val processed = a.foldLeft(List[A]()){ case(acc, a) =>
+//      a match {
+//        case None => acc
+//        case Some(av) => acc :+ av
+//      }
+//    }
+//    if(processed.size < a.size) None else Some(processed)
+
+    // if we use traverse we just need a trivial function
+    traverse(a)(i => i)
+  }
+
+
+  def traverse[A, B](as: List[A])(f: A => Option[B]): Option[List[B]] = {
+// better than the original sequence implementation... doesn't completely short-circuit when a None is encountered,
+//  but we don't explicitly handle the Nones.... now, doesn't this look familiar?  And BTW, we need to
+//  explicitly type the start value because our Option doesn't have a constructor itself, otherwise Option(List[B]()) would work
+//
+//    as.foldLeft(Some(List[B]()): Option[List[B]]){ case(acc, a) =>
+//      acc.flatMap { list =>
+//        f(a).map { av =>
+//          list :+ av
+//        }
+//      }
+//    }
+    as.foldLeft(Some(Nil): Option[List[B]]){ case(o, a) =>
+      map2(o, f(a)){ case(list, b) => list :+ b }
+    }
+  }
+}
