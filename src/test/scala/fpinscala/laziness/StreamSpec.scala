@@ -122,4 +122,88 @@ class StreamSpec extends FlatSpec with Matchers {
 	it should "return only true elements" in {
 		Stream(1,2,3).takeWhile2(_ < 3).toList should be (List(1, 2))
 	}
+
+
+	// 5.6
+
+	behavior of "headOption"
+
+	it should "return None empty stream" in {
+		Stream[Int]().headOption should be (None)
+	}
+
+	it should "return first element of single-item list" in {
+		Stream(1).headOption should be (Some(1))
+	}
+
+
+	// 5.7
+
+	// I copied these these tests from the the List tests of chapter 3
+
+	behavior of "map"
+
+	def mapF(i: Int) = i.toString
+
+	it should "return Nil for Nil" in {
+		Stream.empty.map(mapF).toList should be (Nil)
+	}
+
+	it should "map a list" in {
+		Stream(1, 2, 3).map(mapF).toList should be (List("1", "2", "3"))
+	}
+
+
+	behavior of "filter"
+
+	def isEven(i: Int) = i % 2 == 0
+
+	it should "return Empty for Empty" in {
+		Stream.empty[Int].filter(isEven).toList should be (Nil)
+	}
+
+	it should "filter a list" in {
+		Stream(1,2,3,4,5).filter(isEven).toList should be (List(2,4))
+	}
+
+
+
+
+	behavior of "append"
+
+	val strings = Stream("a", "b", "c")
+
+	it should "Nil + Nil = Nil" in {
+		Stream.empty.append(Stream.empty).toList should be (Nil)
+	}
+
+	it should "List + Nil = List" in {
+		strings.append(Stream.empty).toList should be (strings.toList)
+	}
+
+	it should "Nil + List = List" in {
+		Stream.empty.append(strings).toList should be (strings.toList)
+	}
+
+	it should "combine two lists" in {
+		strings.append(Stream("e", "f")).toList should be (List("a", "b", "c", "e", "f"))
+	}
+
+
+	behavior of "flatMap"
+
+	def fm(i: Int) = Stream(i.toString, " ")
+
+	it should "return empty for empty" in {
+		Stream.empty[Int].flatMap(fm).toList should be (Nil)
+	}
+
+	it should "map a stream" in {
+		Stream(1, 2, 3).flatMap(fm).toList should be (List("1", " ", "2", " ", "3", " "))
+	}
+
+	it should "pass the book's test" in {
+		Stream(1, 2, 3).flatMap(i => Stream(i, i)).toList should be (List(1, 1, 2, 2, 3, 3))
+	}
+
 }
