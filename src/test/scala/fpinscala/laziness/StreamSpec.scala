@@ -321,4 +321,57 @@ class StreamSpec extends FlatSpec with Matchers {
 		Stream(1,2,3).takeWhile3(_ < 3).toList should be (List(1, 2))
 	}
 
+
+	behavior of "zipWith"
+
+	def zipF(i: Int, d: Double) = (i*d).toString
+	def zipF2(d: Double, i: Int) = (i*d).toString
+
+	it should "return Nil for Nil" in {
+		Stream.empty.zipWith(Stream(10.0, 20.0, 30.0), zipF).toList should be (Nil)
+	}
+
+	it should "add two lists" in {
+		Stream(1, 2, 3).zipWith(Stream(10.0, 20.0, 30.0), zipF).toList should be (List("10.0", "40.0", "90.0"))
+	}
+
+	it should "add two lists the same way in different order" in {
+		Stream(10.0, 20.0, 30.0).zipWith(Stream(1, 2, 3), zipF2).toList should be (List("10.0", "40.0", "90.0"))
+	}
+
+
+	behavior of "zipAll"
+
+	it should "return empty when both lists empty" in {
+		Stream.empty.zipAll(Stream.empty).toList should be (Nil)
+	}
+
+	it should "combine when first list is empty" in {
+		Stream.empty.zipAll(Stream(1, 2)).toList should be (
+			List(
+				(None, Some(1)),
+				(None, Some(2))
+			)
+		)
+	}
+
+	it should "combine when second list is empty" in {
+		Stream(1, 2).zipAll(Stream.empty).toList should be (
+			List(
+				(Some(1), None),
+				(Some(2), None)
+			)
+		)
+	}
+
+	it should "combine two lists" in {
+		Stream(1, 2).zipAll(Stream(7, 8, 9)).toList should be (
+			List(
+				(Some(1), Some(7)),
+				(Some(2), Some(8)),
+				(None,    Some(9))
+			)
+		)
+	}
+
 }

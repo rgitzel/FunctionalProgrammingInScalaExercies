@@ -110,7 +110,7 @@ trait Stream[+A] {
     // rather awkward...
     unfold(this) {
       case Cons(h, t) =>
-        Some((f(h()), t()))
+        Some(f(h()), t())
       case _ =>
         None
     }
@@ -129,6 +129,30 @@ trait Stream[+A] {
 
   def flatMap[B](f: A => Stream[B]): Stream[B] =
     foldRight(empty[B])((a,b) => f(a).append(b))
+
+  def zipWith[B, C](bs: => Stream[B], f: (A, B) => C): Stream[C] =
+    unfold((this, bs)) {
+      case (Cons(ha, ta), Cons(hb, tb)) =>
+        val fv = f(ha(), hb())
+        Some(fv, (ta(), tb()))
+      case _ =>
+        None
+    }
+
+  def zipAll[B, C](bs: => Stream[B]): Stream[(Option[A],Option[B])] =
+    unfold((this, bs)) {
+      case (Cons(ha, ta), Cons(hb, tb)) =>
+        val v = (Some(ha()), Some(hb()))
+        Some(v, (ta(), tb()))
+      case (Cons(ha, ta), _) =>
+        val v = (Some(ha()), None)
+        Some(v, (ta(), empty))
+      case (_, Cons(hb, tb)) =>
+        val v = (None, Some(hb()))
+        Some(v, (empty, tb()))
+      case _ =>
+        None
+    }
 
   def startsWith[B](s: Stream[B]): Boolean = sys.error("todo")
 }
