@@ -206,4 +206,119 @@ class StreamSpec extends FlatSpec with Matchers {
 		Stream(1, 2, 3).flatMap(i => Stream(i, i)).toList should be (List(1, 1, 2, 2, 3, 3))
 	}
 
+
+	// 5.8
+
+	behavior of "constant"
+
+	it should "return 5 5's" in {
+		Stream.constant(5).take(5).toList should be (List(5, 5, 5, 5, 5))
+	}
+
+
+	// 5.9
+
+	behavior of "from"
+
+	it should "return 5 6 7" in {
+		Stream.from(5).take(3).toList should be (List(5, 6, 7))
+	}
+
+
+
+	// 5.10
+
+	behavior of "fibs"
+
+	val fibsTo10 = List(0, 1, 1, 2, 3, 5, 8, 13, 21, 34)
+
+	it should "return 0, 1 first" in {
+		Stream.fibs.take(2).toList should be (List(0, 1))
+	}
+
+
+	it should "return the usual sequence" in {
+		Stream.fibs.take(10).toList should be (fibsTo10)
+	}
+
+
+	// 5.12
+
+	behavior of "fibs2"
+
+	it should "return the usual sequence" in {
+		Stream.fibs2.take(10).toList should be (fibsTo10)
+	}
+
+
+	behavior of "from2"
+
+	it should "return 5 6 7" in {
+		Stream.from2(5).take(3).toList should be (List(5, 6, 7))
+	}
+
+
+	behavior of "constant2"
+
+	it should "return 5 5's" in {
+		Stream.constant2(5).take(5).toList should be (List(5, 5, 5, 5, 5))
+	}
+
+
+	behavior of "ones2"
+
+	it should "return 5 1's" in {
+		Stream.ones2.take(5).toList should be (List(1, 1, 1, 1, 1))
+	}
+
+	// 5.13
+
+	behavior of "map2"
+
+	it should "return Nil for Nil" in {
+		Stream.empty.map2(mapF).toList should be (Nil)
+	}
+
+	it should "map a list" in {
+		Stream(1, 2, 3).map2(mapF).toList should be (List("1", "2", "3"))
+	}
+
+
+	behavior of "take2"
+
+	it should "return nothing for empty stream" in {
+		Empty.take2(1) should be (Empty)
+	}
+
+	it should "return nothing for n=0" in {
+		Stream(1,2,3).take2(0) should be (Empty)
+	}
+
+	it should "return one item for n=1" in {
+		Stream(1,2,3).take2(1).toList should be (List(1))
+	}
+
+	it should "return all items for n=4" in {
+		Stream(1,2,3).take2(4).toList should be (List(1, 2, 3))
+	}
+
+
+	behavior of "takeWhile3"
+
+	it should "return nothing for empty stream" in {
+		Stream[Int]().takeWhile3(_ < 10).toList should be (Nil)
+	}
+
+	it should "return nothing if first element false but rest are true" in {
+		Stream(1,2,3).takeWhile3(_ > 1).toList should be (Nil)
+	}
+
+	it should "return everything if all true elements" in {
+		Stream(1,2,3).takeWhile3(_ > 0).toList should be (List(1,2,3))
+	}
+
+	it should "return only true elements" in {
+		Stream(1,2,3).takeWhile3(_ < 3).toList should be (List(1, 2))
+	}
+
 }
