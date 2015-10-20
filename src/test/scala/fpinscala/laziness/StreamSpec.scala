@@ -387,4 +387,19 @@ class StreamSpec extends FlatSpec with Matchers {
 		Stream(1, 2, 3).startsWith(Stream(1, 3)) should be (false)
 	}
 
+
+	// 5.15
+
+	behavior of "tails"
+
+	it should "work for book example" in {
+		Stream(1, 2, 3).tails.toList.map(_.toList) should be(
+		  List(
+			  List(1, 2, 3),
+			  List(2, 3),
+			  List(3),
+			  List()
+			)
+		)
+	}
 }
