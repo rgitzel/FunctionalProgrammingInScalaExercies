@@ -82,16 +82,14 @@ trait Stream[+A] {
 
   def takeWhile3(p: A => Boolean): Stream[A] =
     unfold(this){
-      _ match {
-        case Cons(h, t) =>
-          val v = h()
-          if(p(v))
-            Some(v, t())
-          else
-            None
-        case _ =>
+      case Cons(h, t) =>
+        val v = h()
+        if(p(v))
+          Some(v, t())
+        else
           None
-      }
+      case _ =>
+        None
     }
 
   def forAll(p: A => Boolean): Boolean = 
@@ -154,7 +152,15 @@ trait Stream[+A] {
         None
     }
 
-  def startsWith[B](s: Stream[B]): Boolean = sys.error("todo")
+  def startsWith[A](s: Stream[A]): Boolean =
+    zipAll(s).forAll {
+      case (Some(a), Some(b)) =>
+        a == b
+      case (Some(a), None) =>
+        true
+      case _ =>
+        false
+    }
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]

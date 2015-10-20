@@ -374,4 +374,17 @@ class StreamSpec extends FlatSpec with Matchers {
 		)
 	}
 
+
+	// 5.14
+
+	behavior of "startsWith"
+
+	it should "work for book example" in {
+		Stream(1, 2, 3).startsWith(Stream(1, 2)) should be (true)
+	}
+
+	it should "work for book example 2" in {
+		Stream(1, 2, 3).startsWith(Stream(1, 3)) should be (false)
+	}
+
 }
