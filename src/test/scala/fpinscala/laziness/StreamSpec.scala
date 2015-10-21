@@ -402,4 +402,30 @@ class StreamSpec extends FlatSpec with Matchers {
 			)
 		)
 	}
+
+
+	// 5.16
+
+	behavior of "scanRightUsingFoldRight"
+
+	it should "work for book example" in {
+		Stream(1, 2, 3).scanRightUsingFoldRight(0)(_ + _).toList should be(List(6, 5, 3, 0))
+	}
+
+	it should "work for string concatenation" in {
+		Stream("1", "2", "3").scanRightUsingFoldRight("")(_ + _).toList should be(List("123", "23", "3", ""))
+	}
+
+
+	behavior of "scanRightUsingUnfold"
+
+	it should "not work for book example" in {
+		val s = Stream(1, 2, 3).scanRightUsingUnfold(0)(_ + _).toList
+
+		s should not be(List(6, 5, 3, 0))
+
+		// unfold does it in the wrong order
+		s should be(List(0, 1, 3, 6))
+	}
+
 }

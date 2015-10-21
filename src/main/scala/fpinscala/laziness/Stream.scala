@@ -171,6 +171,37 @@ trait Stream[+A] {
           None
       }
     )
+
+  def scanRightUsingFoldRight[B](z: => B)(f: (A, => B) => B): Stream[B] =
+    foldRight(empty[B]){ case(a,b) =>
+      b match {
+        case Empty =>
+          cons(f(a, z), Stream(z))
+        case Cons(h, t) =>
+          cons(f(a, h()), b)
+      }
+    }
+
+// not only is more complicated, using a tuple, but... unfold is not going to
+//  work... if it was scanLEFT then yes, but... we're going at it in reverse, and we
+//  can't reverse a stream... can we?
+
+  def scanRightUsingUnfold[B](z: => B)(f: (A, => B) => B): Stream[B] =
+    unfold[B,Tuple2[Stream[A],Stream[B]]]((this, empty[B])){ case(as, interimResults) =>
+      as match {
+        case Cons(a, t) =>
+          interimResults match {
+            case Empty =>
+              Some(z, (as, Stream(z)))
+            case c =>
+              val v = f(a(), interimResults.headOption.get)
+              Some(v, (t(), cons(v, interimResults)))
+          }
+        case _ =>
+          None
+      }
+    }
+
 }
 case object Empty extends Stream[Nothing]
 case class Cons[+A](h: () => A, t: () => Stream[A]) extends Stream[A]
