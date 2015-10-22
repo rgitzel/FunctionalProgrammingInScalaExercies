@@ -153,6 +153,10 @@ trait Stream[+A] {
     }
 
   def startsWith[A](s: Stream[A]): Boolean =
+/*
+ * d'oh! the boolean is here is NOT the return value, it's whether to continue,
+ *  which means forAll won't stop with the bs run out
+
     zipAll(s).forAll {
       case (Some(a), Some(b)) =>
         a == b
@@ -161,7 +165,15 @@ trait Stream[+A] {
       case _ =>
         false
     }
-
+ */
+    unfold(zipAll(s), true) {
+      case ((Some(a), Some(b)), so =>
+        a == b
+      case (Some(a), None) =>
+        true
+      case _ =>
+        false
+    }
   def tails: Stream[Stream[A]] =
     Stream(this).append(
       unfold(this) {

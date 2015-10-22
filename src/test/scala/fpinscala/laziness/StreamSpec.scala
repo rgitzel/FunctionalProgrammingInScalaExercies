@@ -364,7 +364,7 @@ class StreamSpec extends FlatSpec with Matchers {
 		)
 	}
 
-	it should "combine two lists" in {
+	it should "combine two finite lists" in {
 		Stream(1, 2).zipAll(Stream(7, 8, 9)).toList should be (
 			List(
 				(Some(1), Some(7)),
@@ -374,6 +374,16 @@ class StreamSpec extends FlatSpec with Matchers {
 		)
 	}
 
+	it should "combine two infinite lists" in {
+		Stream.from(1).zipAll(Stream.from(2)).take(4).toList should be (
+			List(
+				(Some(1), Some(2)),
+				(Some(2), Some(3)),
+				(Some(3), Some(4)),
+				(Some(4), Some(5))
+			)
+		)
+	}
 
 	// 5.14
 
@@ -381,6 +391,18 @@ class StreamSpec extends FlatSpec with Matchers {
 
 	it should "work for book example" in {
 		Stream(1, 2, 3).startsWith(Stream(1, 2)) should be (true)
+	}
+
+	it should "not work in reverse fo book example" in {
+		Stream(1, 2).startsWith(Stream(1, 2, 3)) should be (false)
+	}
+
+	it should "work with infinite stream " in {
+		Stream.from(1).startsWith(Stream(1, 2, 3)) should be (true)
+	}
+
+	it should "fail with infinite stream " in {
+		Stream.from(1).startsWith(Stream(1, 2, 4)) should be (false)
 	}
 
 	it should "work for book example 2" in {
