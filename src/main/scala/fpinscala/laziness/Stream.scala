@@ -152,10 +152,10 @@ trait Stream[+A] {
         None
     }
 
-  def startsWith[A](s: Stream[A]): Boolean =
-/*
+  def startsWith[A](s: Stream[A]): Boolean = {
+    /*
  * d'oh! the boolean is here is NOT the return value, it's whether to continue,
- *  which means forAll won't stop with the bs run out
+ *  which means forAll won't stop when the bs run out
 
     zipAll(s).forAll {
       case (Some(a), Some(b)) =>
@@ -166,14 +166,30 @@ trait Stream[+A] {
         false
     }
  */
-    unfold(zipAll(s), true) {
-      case ((Some(a), Some(b)), so =>
-        a == b
-      case (Some(a), None) =>
-        true
-      case _ =>
-        false
+    // ah!  this can be simplified I'm sure, but really the trick is that
+    //  you DO have to track why the comparison failed...
+    val ns = zipAll(s).map {
+      case (a, b) =>
+        //println(a, b, a == b)
+        if (a == b)
+          // a good, keep going
+          0
+        else if(a.isDefined && !b.isDefined)
+          // ran out
+          1
+        else
+          // sub is longer
+          2
+    }.filter(_ != 0)
+
+    ns.headOption match {
+      case None => true
+      case Some(1) => true
+      case Some(2) => false
+      case _ => false
     }
+  }
+
   def tails: Stream[Stream[A]] =
     Stream(this).append(
       unfold(this) {

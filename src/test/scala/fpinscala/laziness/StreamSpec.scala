@@ -14,11 +14,11 @@ class StreamSpec extends FlatSpec with Matchers {
 
 	it should "convert head with no tail to single-item list" in {
 		Stream(1).toList should be(List(1))
-	}	
+	}
 
 	it should "convert head with tail to multi-item list" in {
 		Stream(1, 2, 3).toList should be(List(1, 2, 3))
-	}	
+	}
 
 
 	// 5.2
@@ -85,7 +85,7 @@ class StreamSpec extends FlatSpec with Matchers {
 		Stream(1,2,3).takeWhile(_ < 3).toList should be (List(1, 2))
 	}
 
-	
+
 	// 5.4
 
 	behavior of "forAll"
@@ -389,25 +389,32 @@ class StreamSpec extends FlatSpec with Matchers {
 
 	behavior of "startsWith"
 
-	it should "work for book example" in {
+	it should "work on itself" in {
+		Stream(1).startsWith(Stream(1)) should be (true)
+	}
+
+	it should "be false on not itself" in {
+		Stream(1).startsWith(Stream(2)) should be (false)
+	}
+
+	it should "be true for book example" in {
 		Stream(1, 2, 3).startsWith(Stream(1, 2)) should be (true)
 	}
 
-	it should "not work in reverse fo book example" in {
+	it should "be false if substring is longer" in {
 		Stream(1, 2).startsWith(Stream(1, 2, 3)) should be (false)
 	}
 
-	it should "work with infinite stream " in {
+	it should "be true when sub matches infinite stream " in {
+		println()
 		Stream.from(1).startsWith(Stream(1, 2, 3)) should be (true)
 	}
 
-	it should "fail with infinite stream " in {
+	it should "be false when sub doesn't match infinite stream" in {
+		println()
 		Stream.from(1).startsWith(Stream(1, 2, 4)) should be (false)
 	}
 
-	it should "work for book example 2" in {
-		Stream(1, 2, 3).startsWith(Stream(1, 3)) should be (false)
-	}
 
 
 	// 5.15
