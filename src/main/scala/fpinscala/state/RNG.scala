@@ -33,8 +33,12 @@ object RNG {
       (f(a), rng2)
     }
 
+  def mapWithFlatMap[A, B](s: Rand[A])(f: A => B): Rand[B] =
+    flatMap(s){ a => unit(f(a)) }
+
   def nonNegativeInt(rng: RNG): (Int, RNG) = {
     val next = rng.nextInt
+    // can't just use Math.abs, as it doesn't account for MinValue being 'bigger' than MaxValue
     val nextInt = if (next._1 < 0) -(next._1 + 1) else next._1
     (nextInt, next._2)
   }
@@ -90,6 +94,13 @@ object RNG {
       (f(a, b), rngB)
     }
 
+  def map2WithFlatMap[A, B, C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] =
+    flatMap(ra) { a =>
+      flatMap(rb) { b =>
+        unit(f(a, b))
+      }
+    }
+
   def sequence[A](fs: List[Rand[A]]): Rand[List[A]] =
     fs match {
       case Nil =>
@@ -104,29 +115,29 @@ object RNG {
         }
     }
 
+  def sequenceViaFold[A](fs: List[Rand[A]]): Rand[List[A]] =
+    fng => fs.foldLeft((List[A](), fng)){ case((list, ng), f) =>
+      val (next, nextRng) = f(ng)
+      (list :+ next, nextRng)
+    }
+
   def intsViaSequence(count: Int)(rng: RNG): (List[Int], RNG) =
     sequence(List.fill(count)(int))(rng)
 
 
-  def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] = ???
+  def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] =
+    rng => {
+      val (a, rng2) = f(rng)
+      g(a)(rng2)
+    }
+
+  def nonNegativeLessThan(n: Int): Rand[Int] =
+    flatMap(nonNegativeInt){ i =>
+      val mod = i % n
+      if(i + (n-1) - mod >= 0)
+        unit(mod)
+      else
+        nonNegativeLessThan(n)
+    }
 }
 
-case class State[S,+A](run: S => (A, S)) {
-  def map[B](f: A => B): State[S, B] =
-    sys.error("todo")
-  def map2[B,C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
-    sys.error("todo")
-  def flatMap[B](f: A => State[S, B]): State[S, B] =
-    sys.error("todo")
-}
-
-sealed trait Input
-case object Coin extends Input
-case object Turn extends Input
-
-case class Machine(locked: Boolean, candies: Int, coins: Int)
-
-object State {
-  type Rand[A] = State[RNG, A]
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
-}
