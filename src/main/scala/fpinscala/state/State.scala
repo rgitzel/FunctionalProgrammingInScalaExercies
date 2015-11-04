@@ -28,6 +28,8 @@ case class State[S,+A](run: S => (A, S)) {
         f(a).run(next)
       }
     )
+
+
 }
 
 object State {
@@ -35,5 +37,13 @@ object State {
 
   def unit[S,A](a: A): State[S,A] = State(s => (a, s))
 
-  def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+
+  def sequence[S,A](fs: List[State[S,A]]): State[S, List[A]] =
+    State( s =>
+      fs.foldLeft((List[A](), s)){ case((list, next), f) =>
+        val (a, nextRng) = f.run(next)
+        (list :+ a, nextRng)
+      }
+    )
+
 }
