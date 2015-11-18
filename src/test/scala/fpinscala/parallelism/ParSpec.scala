@@ -201,5 +201,56 @@ class ParSpec extends FlatSpec with Matchers {
 
     equate(map5(unit(2), unit(3), unit(4), unit(5), unit(2))(f), unit(2 + 3 * 4 - 5 * 2))
   }
+
+
+  behavior of "choiceN"
+
+  it should "work" in {
+    val is = List(unit(1), unit(2), unit(3))
+    equate(choiceN(unit(1))(is), unit(2))
+  }
+
+  behavior of "choiceWithChoiceN"
+
+  it should "work for false" in {
+    equate(choiceWithChoiceN(unit(false))(unit(1),unit(2)), unit(2))
+  }
+
+  it should "work for true" in {
+    equate(choiceWithChoiceN(unit(true))(unit(1),unit(2)), unit(1))
+  }
+
+
+  behavior of "choiceMap"
+
+  it should "work" in {
+    val m = Map(
+      "a" -> unit(1),
+      "b" -> unit(2),
+      "c" -> unit(3)
+    )
+    equate(choiceMap(unit("b"))(m), unit(2))
+  }
+
+
+
+  behavior of "choiceNWithChooser"
+
+  it should "work" in {
+    val is = List(unit(1), unit(2), unit(3))
+    equate(choiceNWithChooser(unit(1))(is), unit(2))
+  }
+
+
+  behavior of "choiceWithChooser"
+
+  it should "work for false" in {
+    equate(choiceWithChooser(unit(false))(unit(1),unit(2)), unit(2))
+  }
+
+  it should "work for true" in {
+    equate(choiceWithChooser(unit(true))(unit(1),unit(2)), unit(1))
+  }
+
 }
 

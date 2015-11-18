@@ -206,6 +206,9 @@ object Par {
   }
 
   def map5[A,B,C,D,E,F](pa: Par[A], pb: Par[B], pc: Par[C], pd: Par[D], pe: Par[E])(f: (A,B,C,D,E) => F): Par[F] = {
+
+// take your pick of implementations...
+
 //    val t1 = map2(pa, pb){ (_, _) }
 //    val t2 = map2(pc, pd){ (_, _) }
 //    val t3 = map2(t1, t2){ case((a, b), (c, d)) => (a, b, c, d)}
@@ -230,6 +233,39 @@ object Par {
       if (run(es)(cond).get) t(es) // Notice we are blocking on the result of `cond`.
       else f(es)
 
+
+  def choiceN[A](n: Par[Int])(choices: List[Par[A]]): Par[A] = {
+    es => {
+      val i = run(es)(n).get
+      choices.toSeq.apply(i)(es)
+    }
+  }
+
+  def choiceWithChoiceN[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+    choiceN(map(cond){ b => if(b) 0 else 1})(List(t, f))
+
+  def choiceMap[K,V](key: Par[K])(choices: Map[K,Par[V]]): Par[V] =
+    es => {
+      val k = run(es)(key).get
+      val v = (choices(k))
+      v(es)
+    }
+
+  def chooser[A,B](pa: Par[A])(choices: A => Par[B]): Par[B] =
+    // exactly the same implementation as choiceMap... then again, a Map is basically a function between sets...
+    es => {
+      val k = run(es)(pa).get
+      val v = (choices(k))
+      v(es)
+    }
+
+  def choiceNWithChooser[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
+    chooser(n){ i =>
+      choices.toSeq.apply(i)
+    }
+
+  def choiceWithChooser[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+    chooser(cond){ b => if(b) t else f }
 
   /* Gives us infix syntax for `Par`. */
   implicit def toParOps[A](p: Par[A]): ParOps[A] = new ParOps(p)
