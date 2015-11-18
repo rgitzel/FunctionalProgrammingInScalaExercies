@@ -17,11 +17,8 @@ class ParSpec extends FlatSpec with Matchers {
   // NOTE!!!  if a, b aren't lazy, elapsed is always <= 1
   def equateWithin[A](millis: Int, a: => Par[A], b: => Par[A]) = {
     val start = System.currentTimeMillis
-    val expected = b(es).get
-    val returned = a(es).get
-    returned should be (expected)
+    equate(a, b)
     val elapsed = (System.currentTimeMillis - start).toInt
-    println(s"${returned}, ${expected} => ${elapsed}")
     elapsed should be < millis
   }
 
@@ -151,6 +148,58 @@ class ParSpec extends FlatSpec with Matchers {
       parWordCountWithIndexedSeq(delay, list ++ list ++ list),
       unit(3 * 19)
     )
+  }
+
+
+
+  behavior of "parWordCountWithList"
+
+  it should "return 0 for Nil" in {
+    equate(parWordCountWithList(100, List()), unit(0))
+  }
+
+  it should "return proper count for multi-item list and do it all in parallel" in {
+    val list = List(
+      "1foo bar baz",
+      "2monkeys in a tree",
+      "the quick brown fox be jumping",
+      "3foo",
+      "4whoa nellie",
+      "5a b c"
+    )
+    val delay = 200
+    equateWithin[Int](
+      (delay * 1.2).toInt,
+      parWordCountWithList(delay, list ++ list ++ list ++ list ++ list ++ list ++ list),
+      unit(7 * 19)
+    )
+  }
+
+
+  behavior of "map3"
+
+  it should "work" in {
+    def f(a: Int, b: Int, c: Int) = a + b * c
+
+    equate(map3(unit(2), unit(3), unit(4))(f), unit(2 + 3 * 4))
+  }
+
+
+  behavior of "map4"
+
+  it should "work" in {
+    def f(a: Int, b: Int, c: Int, d: Int) = a + b * c - d
+
+    equate(map4(unit(2), unit(3), unit(4), unit(5))(f), unit(2 + 3 * 4 - 5))
+  }
+
+
+  behavior of "map5"
+
+  it should "work" in {
+    def f(a: Int, b: Int, c: Int, d: Int, e: Int) = a + b * c - d * e
+
+    equate(map5(unit(2), unit(3), unit(4), unit(5), unit(2))(f), unit(2 + 3 * 4 - 5 * 2))
   }
 }
 

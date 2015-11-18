@@ -76,7 +76,11 @@ object Par {
     }
   }
 
-  def binaryMap[A,B](as: IndexedSeq[A], z: B, f: A => B, combine: (B,B) => B): Par[B] = {
+  // the mapping function is not really needed here, in that you can map ahead of time,
+  //  but it provides a convenient place to insert a time cost to make it easier to verify
+  //  things really are happening in parallel and not in series... certainly it could be moved out,
+  //  but I don't have the time to sort that out currently
+  def binaryMapCombine[A,B](as: IndexedSeq[A], z: B, f: A => B, combine: (B,B) => B): Par[B] =
     as.size match {
       case 0 =>
         unit(z)
@@ -86,17 +90,16 @@ object Par {
         val (l,r) = as.splitAt(as.length/2)
         // can only use the 'fork' version if a non-fixed-thread executor service
         //  or not? maybe it's making the number of threads high enough?
-        println(s"${now} split ${as} into '${l}' and '${r}'")
+//        println(s"${now} split ${as} into '${l}' and '${r}'")
         map2(
-          fork(binaryMap(l, z, f, combine)),
-          fork(binaryMap(r, z, f, combine))
+          fork(binaryMapCombine(l, z, f, combine)),
+          fork(binaryMapCombine(r, z, f, combine))
         )(combine)
         //map2(binaryMap(l, z, f, combine), binaryMap(r, z, f, combine))(combine)
     }
-  }
 
   def parSum2(ints: IndexedSeq[Int]): Par[Int] =
-    binaryMap[Int,Int](
+    binaryMapCombine[Int,Int](
       ints,
       0,
       i => i,
@@ -104,7 +107,7 @@ object Par {
     )
 
   def parMax(ints: IndexedSeq[Int]): Par[Int] =
-    binaryMap[Int,Int](
+    binaryMapCombine[Int,Int](
       ints,
       Int.MinValue,
       i => i,
@@ -112,14 +115,15 @@ object Par {
     )
 
   def parConcat(ints: IndexedSeq[Int]): Par[String] =
-    binaryMap[Int,String](
+    binaryMapCombine[Int,String](
       ints,
       "",
       i => i.toString,
       (b1, b2) => b1 + b2
     )
 
-  def now = System.currentTimeMillis() % 1000
+  // quick tool for including a simple timestamp
+  def now = System.currentTimeMillis() % 10000
 
   def wordCount(s: String) =
     s.trim match {
@@ -128,20 +132,92 @@ object Par {
     }
 
   def parWordCountWithIndexedSeq(delay: Int, paragraphs: IndexedSeq[String]): Par[Int] =
-    binaryMap[String,Int](
+    binaryMapCombine[String,Int](
       paragraphs,
       0,
       paragraph => {
-        println(s"${now} counting '${paragraph}'")
+//        println(s"${now} counting '${paragraph}'")
         Thread.sleep(delay)
-        println(s"${now} done counting '${paragraph}'")
+//        println(s"${now} done counting '${paragraph}'")
         wordCount(paragraph)
       },
       (b1, b2) => {
-        println(s"${now} combining '${b1}' and '${b2}")
+//        println(s"${now} combining '${b1}' and '${b2}'")
         b1 + b2
       }
     )
+
+  def parMapCombine[A,B](as: List[A], z: B, f: A => B, combine: (B,B) => B): Par[B] =
+    as match {
+      case Nil =>
+        unit(z)
+      case h::t =>
+        map2(
+          lazyUnit(f(h)),
+          fork(parMapCombine(t, z, f, combine))
+        )(combine)
+    }
+
+  def parWordCountWithList(delay: Int, paragraphs: List[String]): Par[Int] =
+    parMapCombine[String,Int](
+      // NOTE how these parameters and functions are identical to that when using a Seq
+      paragraphs,
+      0,
+      paragraph => {
+//        println(s"${now} counting '${paragraph}'")
+        Thread.sleep(delay)
+//        println(s"${now} done counting '${paragraph}'")
+        wordCount(paragraph)
+      },
+      (b1, b2) => {
+//        println(s"${now} combining '${b1}' and '${b2}'")
+        b1 + b2
+      }
+    )
+// here's the direct implementation  
+//    paragraphs match {
+//      case Nil =>
+//        unit(0)
+//      case h::t =>
+//        map2(
+//          lazyUnit {
+//            Thread.sleep(delay)
+//            wordCount(h)
+//          },
+//          fork(parWordCountWithList(delay, t))
+//        )(_ + _)
+//    }
+
+  def map3[A,B,C,D](pa: Par[A], pb: Par[B], pc: Par[C])(f: (A,B,C) => D): Par[D] = {
+// to make this work, need to turn Par[Par[D]] into Par[D]... which we do later with join, but don't have yet
+//    map2[A,B,Par[D]](pa, pb){ (a, b) =>
+//      map2(pc, unit(())){ (c, _) =>
+//        f(a, b, c)
+//      }
+//    }
+    val t = map2[A,B,Tuple2[A,B]](pa, pb){ (a, b) => (a,b) }
+    map2(t, pc) { case((a, b), c) => f(a, b, c)}
+  }
+
+  def map4[A,B,C,D,E](pa: Par[A], pb: Par[B], pc: Par[C], pd: Par[D])(f: (A,B,C,D) => E): Par[E] = {
+    val t1 = map2[A,B,Tuple2[A,B]](pa, pb){ (_, _) }
+    val t2 = map2[C,D,Tuple2[C,D]](pc, pd){ (_, _) }
+    map2(t1, t2) { case((a, b), (c, d)) => f(a, b, c, d)}
+  }
+
+  def map5[A,B,C,D,E,F](pa: Par[A], pb: Par[B], pc: Par[C], pd: Par[D], pe: Par[E])(f: (A,B,C,D,E) => F): Par[F] = {
+//    val t1 = map2(pa, pb){ (_, _) }
+//    val t2 = map2(pc, pd){ (_, _) }
+//    val t3 = map2(t1, t2){ case((a, b), (c, d)) => (a, b, c, d)}
+//    map2(t3, pe) { case((a, b, c, d), e) => f(a, b, c, d, e)}
+
+//    val t = map4(pa, pb, pc, pd){ (_, _, _, _) }
+//    map2(t, pe) { case((a, b, c, d), e) => f(a, b, c, d, e)}
+
+//    map2(map4(pa, pb, pc, pd){ (_, _, _, _) }, pe) { case((a, b, c, d), e) => f(a, b, c, d, e)}
+
+    map3(map3(pa, pb, pc){ (_, _, _) }, pd, pe) { case((a, b, c), d, e) => f(a, b, c, d, e)}
+  }
 
   def equal[A](e: ExecutorService)(p: Par[A], p2: Par[A]): Boolean =
     p(e).get == p2(e).get
