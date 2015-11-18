@@ -111,18 +111,29 @@ class ParSpec extends FlatSpec with Matchers {
   }
 
 
+  behavior of "wordCount"
+
+  it should "return 0 from empty string" in {
+    wordCount("") should be (0)
+  }
+
+  it should "return 1 from single word" in {
+    wordCount("a") should be (1)
+  }
+
+  it should "return 3 from three word string" in {
+    wordCount("a b c") should be (3)
+  }
+
+  it should "ignore extra spaces" in {
+    wordCount(" a      b   c   ") should be (3)
+  }
+
+
   behavior of "parWordCountWithIndexedSeq"
 
   it should "return 0 for Nil" in {
     equate(parWordCountWithIndexedSeq(100, IndexedSeq()), unit(0))
-  }
-
-  it should "return 1 for single-item single-word list" in {
-    equate(parWordCountWithIndexedSeq(100, IndexedSeq("foo")), unit(1))
-  }
-
-  it should "return 3 for single-item three-word list" in {
-    equate(parWordCountWithIndexedSeq(100, IndexedSeq("foo bar baz")), unit(3))
   }
 
   it should "return proper count for multi-item list and do it all in parallel" in {

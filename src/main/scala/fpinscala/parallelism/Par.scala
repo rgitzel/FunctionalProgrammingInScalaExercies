@@ -121,6 +121,12 @@ object Par {
 
   def now = System.currentTimeMillis() % 1000
 
+  def wordCount(s: String) =
+    s.trim match {
+      case "" => 0
+      case t => t.split("\\s+", 0).length
+    }
+
   def parWordCountWithIndexedSeq(delay: Int, paragraphs: IndexedSeq[String]): Par[Int] =
     binaryMap[String,Int](
       paragraphs,
@@ -129,7 +135,7 @@ object Par {
         println(s"${now} counting '${paragraph}'")
         Thread.sleep(delay)
         println(s"${now} done counting '${paragraph}'")
-        paragraph.split(" ").length
+        wordCount(paragraph)
       },
       (b1, b2) => {
         println(s"${now} combining '${b1}' and '${b2}")
