@@ -200,6 +200,7 @@ object Par {
   }
 
   def map4[A,B,C,D,E](pa: Par[A], pb: Par[B], pc: Par[C], pd: Par[D])(f: (A,B,C,D) => E): Par[E] = {
+    // specifying the types isn't need, but it helps show the idea?
     val t1 = map2[A,B,Tuple2[A,B]](pa, pb){ (_, _) }
     val t2 = map2[C,D,Tuple2[C,D]](pc, pd){ (_, _) }
     map2(t1, t2) { case((a, b), (c, d)) => f(a, b, c, d)}
@@ -259,13 +260,20 @@ object Par {
       v(es)
     }
 
+  // yay! now back to not refering to 'es'...
+
   def choiceNWithChooser[A](n: Par[Int])(choices: List[Par[A]]): Par[A] =
-    chooser(n){ i =>
-      choices.toSeq.apply(i)
-    }
+    chooser(n){ i => choices.toSeq.apply(i) }
 
   def choiceWithChooser[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
     chooser(cond){ b => if(b) t else f }
+
+
+  def join[A](ppa: Par[Par[A]]): Par[A] =
+    es => {
+      val pa = run(es)(ppa).get
+      pa(es)
+    }
 
   /* Gives us infix syntax for `Par`. */
   implicit def toParOps[A](p: Par[A]): ParOps[A] = new ParOps(p)
