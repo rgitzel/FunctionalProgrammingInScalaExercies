@@ -196,7 +196,7 @@ object Par {
 //      }
 //    }
     val t = map2[A,B,Tuple2[A,B]](pa, pb){ (a, b) => (a,b) }
-    map2(t, pc) { case((a, b), c) => f(a, b, c)}
+    map2(fork(t), pc) { case((a, b), c) => f(a, b, c)}
   }
 
   def map4[A,B,C,D,E](pa: Par[A], pb: Par[B], pc: Par[C], pd: Par[D])(f: (A,B,C,D) => E): Par[E] = {
@@ -220,7 +220,13 @@ object Par {
 
 //    map2(map4(pa, pb, pc, pd){ (_, _, _, _) }, pe) { case((a, b, c, d), e) => f(a, b, c, d, e)}
 
-    map3(map3(pa, pb, pc){ (_, _, _) }, pd, pe) { case((a, b, c), d, e) => f(a, b, c, d, e)}
+    map3(
+      fork(map3(pa, pb, pc){ (_, _, _) }),
+      pd,
+      pe
+    ){ case((a, b, c), d, e) =>
+      f(a, b, c, d, e)
+    }
   }
 
   def equal[A](e: ExecutorService)(p: Par[A], p2: Par[A]): Boolean =

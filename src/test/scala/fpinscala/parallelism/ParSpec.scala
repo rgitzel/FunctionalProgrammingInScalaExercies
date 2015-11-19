@@ -202,6 +202,28 @@ class ParSpec extends FlatSpec with Matchers {
     equate(map5(unit(2), unit(3), unit(4), unit(5), unit(2))(f), unit(2 + 3 * 4 - 5 * 2))
   }
 
+  def lazyInt(i: Int, delay: Int): Par[Int] =
+    lazyUnit {
+      Thread.sleep(delay)
+      i
+    }
+
+  it should "work in parallel" in {
+    def f(a: Int, b: Int, c: Int, d: Int, e: Int) = a + b * c - d * e
+    val delay = 100
+    equateWithin(
+      delay + 20,
+      map5(
+        lazyInt(2, delay),
+        lazyInt(3, delay),
+        lazyInt(4, delay),
+        lazyInt(5, delay),
+        lazyInt(6, delay)
+      )(f),
+      unit(2 + 3 * 4 - 5 * 6)
+    )
+  }
+
 
   behavior of "choiceN"
 
