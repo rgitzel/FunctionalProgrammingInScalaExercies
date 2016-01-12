@@ -22,7 +22,10 @@ case class Gen[A](sample: State[RNG,A]) {
 
   def flatMap[B](f: A => Gen[B]): Gen[B] = {
     // well that was really hard to sort out, and rather simple, ultimately... still don't quite understand it :(
-    val s = RNG.flatMap[A,B](sample.run){ a => f(a).sample.run }
+    val s = RNG.flatMap[A,B](sample.run){ a =>
+      f(a).sample.run
+      // it seems odd to have to 'unroll' it, but otherwise we end up with Rand[Gen[B]] and then Gen[Gen[B]]
+    }
     Gen(State(s))
   }
 }
