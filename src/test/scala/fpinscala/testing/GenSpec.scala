@@ -1,7 +1,7 @@
 package fpinscala.testing
 
 
-import fpinscala.state.FixedRNG
+import fpinscala.state.{State, RNG, FixedRNG}
 import org.scalatest._
 
 class GenSpec extends FlatSpec with Matchers {
@@ -33,26 +33,75 @@ class GenSpec extends FlatSpec with Matchers {
 
   behavior of "initial version of Gen"
 
+  // abstract-out the rather gawd-awful implementation... and use our fake
+  //  random-number generator to control things
+  def testRun[A](g: Gen[A], is: List[Int]): A = g.sample.run(FixedRNG(is))._1
+  def testRun[A](g: Gen[A], i: Int): A = testRun(g, List(i))
+
+
   it should "choose should return 1 regardless" in {
-    Gen.choose(1, 2).sample.run(FixedRNG(List(345343)))._1 should be (1)
+    testRun(Gen.choose(1, 2), 345343) should be (1)
   }
 
   it should "choose should return half way" in {
-    Gen.choose(1, 10).sample.run(FixedRNG(List(Int.MaxValue/2)))._1 should be (5)
+    testRun(Gen.choose(1, 10), Int.MaxValue/2) should be (5)
   }
 
   it should "unit should what's passed in" in {
-    Gen.unit(17).sample.run(FixedRNG(List(Int.MaxValue/2)))._1 should be (17)
+    testRun(Gen.unit(17), Int.MaxValue/2) should be (17)
   }
 
   it should "boolean should return whether random is even" in {
-    Gen.boolean.sample.run(FixedRNG(List(1,2)))._1 should be (false)
-    Gen.boolean.sample.run(FixedRNG(List(2,1)))._1 should be (true)
+    testRun(Gen.boolean, 1) should be (false)
+    testRun(Gen.boolean, 2) should be (true)
   }
 
   it should "listOfN should return a list" in {
-    Gen.listOfN(4, Gen.boolean).sample.run(FixedRNG(List(1,2,4,7,9)))._1 should be (List(false, true, true, false))
+    testRun(Gen.listOfN(4, Gen.boolean), List(1,2,4,7,9)) should be (List(false, true, true, false))
   }
+
+
+  // after 8.5
+
+  behavior of "char"
+
+  it should "generate an 'a'" in {
+    testRun(Gen.char, 0) should be ('a')
+  }
+
+  it should "generate an 'z'" in {
+    testRun(Gen.char, 51) should be ('z')
+  }
+
+
+
+  behavior of "string"
+
+  it should "generate an empty string on lenght 0" in {
+    testRun(Gen.string(0), 1) should be ("")
+  }
+
+  it should "generate a single-character string on length 1" in {
+    testRun(Gen.string(1), 1) should be ("b")
+  }
+
+  it should "generate a 3-character string on length 3" in {
+    testRun(Gen.string(3), List(1, 0, 17)) should be ("bar")
+  }
+
+
+  // 8.6
+
+  behavior of "flatMap"
+
+  it should "turn an int into a string" in {
+    val g = Gen.unit(7).flatMap{ i => Gen.unit(i.toString) }
+    testRun(g, 1) should be ("7")
+  }
+
+  behavior of "second list of N"
+
+
 }
 
 

@@ -19,7 +19,12 @@ object Prop {
 
 case class Gen[A](sample: State[RNG,A]) {
   def map[A,B](f: A => B): Gen[B] = ???
-  def flatMap[A,B](f: A => Gen[B]): Gen[B] = ???
+
+  def flatMap[B](f: A => Gen[B]): Gen[B] = {
+    // well that was really hard to sort out, and rather simple, ultimately... still don't quite understand it :(
+    val s = RNG.flatMap[A,B](sample.run){ a => f(a).sample.run }
+    Gen(State(s))
+  }
 }
 
 object Gen {
@@ -41,6 +46,19 @@ object Gen {
     Gen(State(RNG.sequence(gs.toList)))
   }
 
+  def char: Gen[Char] = {
+    val r = RNG.map(RNG.int)(i => ('a'.toInt + (i % 26)).toChar)
+    Gen(State(r))
+  }
+
+  def string(len: Int): Gen[String] = {
+    val chars = 1.to(len).map(i => char.sample.run)
+    val s = RNG.flatMap[List[Char],String](RNG.sequence(chars.toList)){ cs =>
+      RNG.unit(cs.mkString)
+    }
+    Gen(State(s))
+    // I think I just implemented a specific version of flatmap...
+  }
 }
 
 
