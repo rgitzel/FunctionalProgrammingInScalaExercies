@@ -42,6 +42,7 @@ object RNG {
   }
 
   def nonNegativeEven: Rand[Int] = map(nonNegativeInt)(i => i - i % 2)
+  def nonNegativeOdd = map(nonNegativeEven)(_ + 1)
 
   def double(rng: RNG): (Double, RNG) = {
     val next = nonNegativeInt(rng)
