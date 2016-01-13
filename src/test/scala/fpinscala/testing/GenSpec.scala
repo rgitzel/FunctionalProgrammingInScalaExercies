@@ -90,6 +90,14 @@ class GenSpec extends FlatSpec with Matchers {
   }
 
 
+  behavior of "map"
+
+  it should "turn an int into a string" in {
+    val g = Gen.unit(7).map{ _.toString }
+    testRun(g, 1) should be ("7")
+  }
+
+
   // 8.6
 
   behavior of "flatMap"

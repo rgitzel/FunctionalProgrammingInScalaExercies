@@ -18,7 +18,9 @@ object Prop {
 }
 
 case class Gen[A](sample: State[RNG,A]) {
-  def map[A,B](f: A => B): Gen[B] = ???
+  def map[B](f: A => B): Gen[B] = {
+    Gen(sample.map(f))
+  }
 
   def flatMap[B](f: A => Gen[B]): Gen[B] = {
     // well that was really hard to sort out, and rather simple, ultimately... still don't quite understand it :(
