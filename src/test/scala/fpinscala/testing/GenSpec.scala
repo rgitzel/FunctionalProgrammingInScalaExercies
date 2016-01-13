@@ -8,7 +8,7 @@ class GenSpec extends FlatSpec with Matchers {
 
   // 8.3
 
-  case class TestProp(check: Boolean) extends Prop
+  case class TestProp(check: Boolean) extends FirstPropImpl
 
   behavior of "&&"
 
@@ -131,7 +131,10 @@ class GenSpec extends FlatSpec with Matchers {
 
   behavior of "union"
 
-  val unionGen = Gen.union(Gen(State(RNG.nonNegativeEven)), Gen(State(RNG.nonNegativeOdd)))
+  val unionGen = Gen.union(
+    Gen(State(RNG.nonNegativeEven)),
+    Gen(State(RNG.nonNegativeOdd))
+  )
 
   it should "pick even when true" in {
     testRun(unionGen, List(2, 5)) should be (4)
@@ -146,10 +149,18 @@ class GenSpec extends FlatSpec with Matchers {
 
   behavior of "weighted"
 
-  // even is three times more likely
+  // make even three times more likely
+  //  TODO at some point this library we're writing will be able to verify this?
+  //   make a Gen of a list of these of a sufficient length, count the evens, should be 75% +- some threshold
   val weightedGen = Gen.weighted(
-    (Gen(State(RNG.nonNegativeEven)), 0.75),
-    (Gen(State(RNG.nonNegativeOdd)), 0.25)
+    (
+      Gen(State(RNG.nonNegativeEven)),
+      0.75
+    ),
+    (
+      Gen(State(RNG.nonNegativeOdd)),
+      0.25
+    )
   )
 
   val threshold = (Int.MaxValue * .75).toInt
