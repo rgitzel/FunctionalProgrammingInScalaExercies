@@ -67,20 +67,11 @@ object Monoid {
 
 
 
-  // TODO: Placeholder for `Prop`. Remove once you have implemented the `Prop`
-  // data type from Part 2.
-  trait Prop {}
-
-  // TODO: Placeholder for `Gen`. Remove once you have implemented the `Gen`
-  // data type from Part 2.
-
-  import fpinscala.testing._
-  import Prop._
   def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop = sys.error("todo")
 
 
+  // what are these doing here?
   def trimMonoid(s: String): Monoid[String] = sys.error("todo")
-
   def concatenate[A](as: List[A], m: Monoid[A]): A =
     sys.error("todo")
 
