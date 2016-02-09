@@ -2,11 +2,11 @@ package fpinscala.monoids
 
 import language.higherKinds
 import fpinscala.laziness._
-import fpinscala.datastructures.{Tree,Branch,Leaf}
+import fpinscala.datastructures.Tree
 
 trait Foldable[F[_]] {
   // more of than not the implementations below used foldMap to implement these two,
-  //  so let's just assume that's the approach; you can override to do something else
+  //  so let's just assume that's the approach; you can override these to do something else
   def foldRight[A, B](as: F[A])(z: B)(f: (A, B) => B): B =
     foldMap(as)(f.curried)(Monoid.endoMonoid[B])(z)
   def foldLeft[A, B](as: F[A])(z: B)(f: (B, A) => B): B = {

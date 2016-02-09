@@ -3,7 +3,7 @@ package fpinscala.monoids
 import fpinscala.monoids.Monoid._
 import org.scalatest._
 import fpinscala.laziness._
-import fpinscala.datastructures.{Tree,Branch,Leaf}
+import fpinscala.datastructures.{Branch,Leaf}
 
 
 class FoldableSpec extends FlatSpec with Matchers {
@@ -223,9 +223,3 @@ class FoldableSpec extends FlatSpec with Matchers {
   }
 
 }
-
-
-
-
-
-

@@ -379,6 +379,86 @@ class MonoidSpec extends FlatSpec with Matchers {
   }
 
 
+  // 10.16
+
+  behavior of "productMonoid"
+
+  {
+    val m = productMonoid(intAddition, stringMonoid)
+
+    val a = (1, "a")
+    val b = (2, "b")
+    val ab = (3, "ab")
+    val c = (3, "c")
+
+    it should "return first arg if second is zero" in {
+      m.op(a, m.zero) should be (a)
+    }
+
+    it should "return second arg if first is zero" in {
+      m.op(m.zero, b) should be (b)
+    }
+
+    it should "return zero if both zero" in {
+      m.op(m.zero, m.zero) should be (m.zero)
+    }
+
+    it should "combine int and string monoids" in {
+      m.op(a, b) should be (ab)
+    }
+
+    it should "be associative" in {
+      m.op(m.op(a, b), c) should be (m.op(a, m.op(b, c)))
+    }
+  }
+
+
+  // 10.17
+
+  behavior of "functionMonoid"
+
+  {
+    val m = functionMonoid[Int,String](stringMonoid)
+
+    def repeater(n: Int) = n.toString * n
+    def dashes(n: Int) = "-" * n
+    def bangs(n: Int) = "!" * n
+
+    it should "return first arg if second is zero" in {
+      m.op(dashes, m.zero)(3) should be ("---")
+    }
+
+    it should "return second arg if first is zero" in {
+      m.op(m.zero, dashes)(3) should be ("---")
+    }
+
+    it should "return zero if both zero" in {
+      m.op(m.zero, m.zero)(12) should be (stringMonoid.zero)
+    }
+
+    it should "combine monoids" in {
+      m.op(repeater, dashes)(3) should be ("333---")
+    }
+
+    it should "be associative" in {
+      val f1 = m.op(m.op(repeater, bangs), dashes)
+      val f2 = m.op(repeater, m.op(bangs, dashes))
+      f1(3) should be (f2(3))
+    }
+  }
+
+
+  // 10.18
+
+  behavior of "bag"
+
+  it should "be empty on empty input" in {
+    bag(Vector()) should be (Map())
+  }
+
+  it should "work on book example" in {
+    bag(Vector("a", "rose", "is", "a", "rose")) should be (Map("a" -> 2, "rose" -> 2, "is" -> 1))
+  }
 }
 
 
