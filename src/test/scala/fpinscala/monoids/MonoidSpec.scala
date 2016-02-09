@@ -1,6 +1,7 @@
 package fpinscala.monoids
 
 
+import fpinscala.monoids.Prop.{Proved, Passed, Falsified}
 import org.scalatest._
 import Monoid._
 
@@ -143,9 +144,22 @@ class MonoidSpec extends FlatSpec with Matchers {
 
   // 10.4
 
-  // behavior of "monoids tested using Prop/Gen"
+  behavior of "monoidLaws for intAddition"
 
-  // TODO: go re-understand how Prop and Gen work...
+
+  it should "pass" in {
+    val testCases = 100
+    val x = monoidLaws(intAddition, Gen.smallInt).run(100, testCases, RNG.Simple(System.currentTimeMillis))
+    x match {
+      case Falsified(msg, n) =>
+        println(s"! Falsified after $n passed tests:\n $msg")
+      case Passed =>
+        println(s"+ OK, passed $testCases tests.")
+      case Proved =>
+        println(s"+ OK, proved property.")
+    }
+    x.isFalsified should be (false)
+  }
 
 
   // 10.5
