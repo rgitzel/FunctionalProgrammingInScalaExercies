@@ -114,20 +114,20 @@ class FoldableSpec extends FlatSpec with Matchers {
 
 
 
-  // 10.12
+  // 10.13
 
   val ReasonablyComplexTreeMapped =
     Branch(
       Branch(
-        Leaf("2"),
-        Leaf("4")
+        Leaf(2),
+        Leaf(4)
       ),
       Branch(
         Branch(
-          Leaf("573"),
-          Leaf("12")
+          Leaf(573),
+          Leaf(12)
         ),
-        Leaf("9")
+        Leaf(9)
       )
     )
 
@@ -163,7 +163,68 @@ class FoldableSpec extends FlatSpec with Matchers {
     TreeFoldable.foldRight(ReasonablyComplexTreeMapped)(""){(i, acc) => acc + i.toString} should be ("91257342")
   }
 
+
+  // 10.14
+
+  behavior of "OptionFoldable foldMap"
+
+  it should "zero on a None" in {
+    OptionFoldable.foldMap(None)(_.toString)(stringMonoid) should be ("")
+  }
+
+  it should "work on a Some" in {
+    OptionFoldable.foldMap(Some(9))(_.toString)(stringMonoid) should be ("9")
+  }
+
+  behavior of "OptionFoldable foldLeft"
+
+  it should "zero on a None" in {
+    OptionFoldable.foldLeft(None)("x"){(acc, i) => i.toString + acc} should be ("x")
+  }
+
+  it should "work on a Some" in {
+    OptionFoldable.foldLeft(Some(8))("y"){(acc, i) => i.toString + acc} should be ("8y")
+  }
+
+
+  behavior of "OptionFoldable foldRight"
+
+  it should "zero on a None" in {
+    OptionFoldable.foldRight(None)("f"){(i, acc) => acc + i.toString} should be ("f")
+  }
+
+  it should "work on a Some" in {
+    OptionFoldable.foldRight(Some(12))("x"){(i, acc) => acc + i.toString} should be ("x12")
+  }
+
+
+  // 10.15
+
+  behavior of "toList"
+
+  it should "work on List[A]" in {
+    ListFoldable.toList(List(1,2,3)) should be (List(1,2,3))
+  }
+
+  it should "work on IndexedSeq[A]" in {
+    IndexedSeqFoldable.toList(Vector(1,2,3)) should be (List(1,2,3))
+  }
+
+  it should "work on Stream[A]" in {
+    StreamFoldable.toList(Stream(1,2,3)) should be (List(1,2,3))
+  }
+
+  it should "work on Tree[A]" in {
+    TreeFoldable.toList(ReasonablyComplexTreeMapped) should be (List(2,4,573,12,9))
+  }
+
+  it should "work on Option[A]" in {
+    OptionFoldable.toList(Some(7)) should be (List(7))
+  }
+
 }
+
+
 
 
 

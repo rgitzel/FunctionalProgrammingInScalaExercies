@@ -5,8 +5,14 @@ import fpinscala.laziness._
 import fpinscala.datastructures.{Tree,Branch,Leaf}
 
 trait Foldable[F[_]] {
-  def foldRight[A, B](as: F[A])(z: B)(f: (A, B) => B): B
-  def foldLeft[A, B](as: F[A])(z: B)(f: (B, A) => B): B
+  // more of than not the implementations below used foldMap to implement these two,
+  //  so let's just assume that's the approach; you can override to do something else
+  def foldRight[A, B](as: F[A])(z: B)(f: (A, B) => B): B =
+    foldMap(as)(f.curried)(Monoid.endoMonoid[B])(z)
+  def foldLeft[A, B](as: F[A])(z: B)(f: (B, A) => B): B = {
+    def curried(a: A) = (b: B) => f(b,a)
+    foldMap(as)(curried)(Monoid.endoMonoid[B])(z)
+  }
 
   def foldMap[A, B](as: F[A])(f: A => B)(mb: Monoid[B]): B
 
@@ -14,7 +20,7 @@ trait Foldable[F[_]] {
     foldLeft(as)(m.zero)(m.op)
 
   def toList[A](as: F[A]): List[A] =
-    sys.error("todo")
+    foldMap(as)(List(_))(Monoid.listMonoid[A])
 }
 
 object ListFoldable extends Foldable[List] {
@@ -28,15 +34,6 @@ object ListFoldable extends Foldable[List] {
 
 
 object IndexedSeqFoldable extends Foldable[IndexedSeq] {
-
-  override def foldRight[A, B](as: IndexedSeq[A])(z: B)(f: (A, B) => B) =
-    foldMap(as)(f.curried)(Monoid.endoMonoid[B])(z)
-
-  override def foldLeft[A, B](as: IndexedSeq[A])(z: B)(f: (B, A) => B) = {
-    def curried(a: A) = (b: B) => f(b,a)
-    foldMap(as)(curried)(Monoid.endoMonoid[B])(z)
-  }
-
   override def foldMap[A, B](as: IndexedSeq[A])(f: A => B)(mb: Monoid[B]): B =
     // copy similar bits from Monoid... can't quite seem to just call the other one, it's tied to List[A] not F[A]
     as.size match {
@@ -57,34 +54,16 @@ object StreamFoldable extends Foldable[Stream] {
 
   override def foldMap[A, B](as: Stream[A])(f: A => B)(mb: Monoid[B]): B =
     foldRight(as)(mb.zero){(a, acc) => mb.op(f(a), acc)}
-
-  override def foldLeft[A, B](as: Stream[A])(z: B)(f: (B, A) => B) = {
-    def curried(a: A) = (b: B) => f(b,a)
-    foldMap(as)(curried)(Monoid.endoMonoid[B])(z)
-  }
 }
 
 object TreeFoldable extends Foldable[Tree] {
-  // I don't know if these are the efficient ways, but... I'm lazy.
-  
+  // I don't know if this is the efficient ways, but... I'm lazy.
   override def foldMap[A, B](as: Tree[A])(f: A => B)(mb: Monoid[B]): B =
     Tree.fold(as, f, mb.op)
-
-  override def foldLeft[A, B](as: Tree[A])(z: B)(f: (B, A) => B) = {
-    def curried(a: A) = (b: B) => f(b,a)
-    foldMap(as)(curried)(Monoid.endoMonoid[B])(z)
-  }
-
-  override def foldRight[A, B](as: Tree[A])(z: B)(f: (A, B) => B) =
-    foldMap(as)(f.curried)(Monoid.endoMonoid[B])(z)
 }
 
 object OptionFoldable extends Foldable[Option] {
   override def foldMap[A, B](as: Option[A])(f: A => B)(mb: Monoid[B]): B =
-    sys.error("todo")
-  override def foldLeft[A, B](as: Option[A])(z: B)(f: (B, A) => B) =
-    sys.error("todo")
-  override def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B) =
-    sys.error("todo")
+    as.fold(mb.zero)(f)
 }
 
