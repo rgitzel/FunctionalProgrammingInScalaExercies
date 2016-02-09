@@ -182,11 +182,11 @@ class MonoidSpec extends FlatSpec with Matchers {
   behavior of "foldLeft using foldMap"
 
   it should "work normally with zero to start" in {
-    foldLeft(listToBeFolded)(""){(a, acc) => a + acc} should be (foldedList.reverse)
+    foldLeft(listToBeFolded)(""){(acc, a) => acc + a} should be (foldedList.reverse)
   }
 
   it should "work normally with non-zero start" in {
-    foldLeft(listToBeFolded)("x"){(a, acc) => a + acc} should be ("x" + foldedList.reverse)
+    foldLeft(listToBeFolded)("x"){(acc, a) => acc + a} should be ("x" + foldedList.reverse)
   }
 
 
@@ -298,10 +298,9 @@ class MonoidSpec extends FlatSpec with Matchers {
 
   // 10.10
 
-  behavior of "wcMonoid"
-
+  def testWcMonoid(m: Monoid[WC])
   {
-    val m = wcMonoid
+    behavior of m.getClass.toString
 
     it should "return first arg if second is zero" in {
       m.op(Stub("a"), m.zero) should be(Stub("a"))
@@ -344,6 +343,9 @@ class MonoidSpec extends FlatSpec with Matchers {
     }
   }
 
+  testWcMonoid(wcMonoid)
+  testWcMonoid(wcMonoid2)
+
   // 10.11
 
   behavior of "count"
@@ -375,5 +377,10 @@ class MonoidSpec extends FlatSpec with Matchers {
   it should "return correct count with preceeding space" in {
     count(" lor sit amet, ") should be (3)
   }
+
+
 }
+
+
+
 

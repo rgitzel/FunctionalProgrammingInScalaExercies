@@ -118,7 +118,7 @@ object Monoid {
     foldMap(as, endoMonoid[B])(curried)(z)
   }
 
-  def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): B = {
+  def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): B =
     as.size match {
       case 0 =>
         m.zero
@@ -128,7 +128,7 @@ object Monoid {
         val (left, right) = as.splitAt(n/2)
         m.op(foldMapV(left, m)(f), foldMapV(right, m)(f))
     }
-  }
+
 
   // one way to track if sorted is to encoded whether a seq is "sorted" with an Option;
   //  after that, we really only care about the range of the sequence, not the interim values;
@@ -168,10 +168,13 @@ object Monoid {
 
   // this one was particularly weakly specified... how are Stubs combined?
   //  how does the parsing happen?  I suppose this will come up in the next
-  //  exercise when 'count' is built
+  //  exercise when 'count' is built...
+  // And ... this seems wrong.  It works, but it's way too convoluted. It
+  //  hardly seems to be a good case for using Monoids.
   val wcMonoid: Monoid[WC] = new Monoid[WC] {
     def op(a1: WC, a2: WC): WC =
       (a1,a2) match {
+        // it's suspicious that these cases should have to be caught explicitly
         case (`zero`, x) =>
           x
         case (x, `zero`) =>
@@ -183,6 +186,7 @@ object Monoid {
         case (Stub(" "), Stub(b)) =>
           Part("", 0, b)
 
+        // don't know if we have a word, yet, so stay a Stub
         case (Stub(a), Stub(b)) =>
           Stub(a + b)
 
@@ -191,7 +195,7 @@ object Monoid {
             if(left == "")
               Part(left, count, right)
             else
-              Part(left, count+1, right)
+              Part("", count + 1, right)
           else
             if(left == "")
               Part(a, count, right)
@@ -203,7 +207,7 @@ object Monoid {
             if(right == "")
               Part(left, count, right)
             else
-              Part(left, count+1, right)
+              Part(left, count + 1, "")
           else
             if(right == "")
               Part(left, count, b)
@@ -222,7 +226,7 @@ object Monoid {
       case 0 =>
         wcMonoid.zero
       case 1 =>
-        // can't remove spaces, here, have to do it above in the op() function
+        // can't remove spaces, here, as we don't know what they mean; do it in the op() function
         Stub(s)
       case n =>
         val left = stringToWc(s.substring(0, n/2))
@@ -232,11 +236,56 @@ object Monoid {
     }
   }
 
+  // looking at the answer, it's complicated too, but somewhat simpler with
+  //  a simpler 'zero'... let's try to implement
+  val wcMonoid2: Monoid[WC] = new Monoid[WC] {
+    def op(a1: WC, a2: WC): WC =
+      (a1,a2) match {
+        case (Stub(a), Stub(b)) =>
+          Stub(a + b)
+
+        case (Stub(a), Part(left, count, right)) =>
+          Part(a + left, count, right)
+
+        case (Part(left, count, right), Stub(b)) =>
+          Part(left, count, right + b)
+
+        case (Part(left1, count1, right1), Part(left2, count2, right2)) =>
+          val middleWordCount = if((right1 + left2).size > 0) 1 else 0
+          Part(left1, count1 + count2 + middleWordCount, right2)
+      }
+    val zero: WC = Stub("")
+  }
+
+  // using the answer's monoid
+  def stringToWc2(s: String): WC = {
+    s.size match {
+      case 0 =>
+        wcMonoid2.zero
+      case 1 =>
+        if(s == " ")
+          // ah, clever, creating an empty Part is what separates the words on either side,
+          //  which is a better meaning for the empty Part, rather than being 'zero' in my solution
+          Part("", 0, "")
+        else
+          Stub(s)
+      case n =>
+        val left = stringToWc(s.substring(0, n/2))
+        val right = stringToWc(s.substring(n/2))
+        //        println(s"$s => '$left' / '$right'")
+        wcMonoid2.op(left, right)
+    }
+  }
+
+  // this works with either my Monoid or the answer monoid, just change 'stringToWc' appropriately
   def count(s: String): Int =
     stringToWc(s) match {
-      case Stub(_) =>
+      case Stub(c) =>
 //        println("stub " + s)
-        1
+        if(c.size == 0)
+          0
+        else
+          1
       case Part(left, count, right) =>
         val leftCount = if(left.size > 0) 1 else 0
         val rightCount = if(right.size > 0) 1 else 0
@@ -257,70 +306,3 @@ object Monoid {
   def bag[A](as: IndexedSeq[A]): Map[A, Int] =
     sys.error("todo")
 }
-
-trait Foldable[F[_]] {
-  import Monoid._
-
-  def foldRight[A, B](as: F[A])(z: B)(f: (A, B) => B): B =
-    sys.error("todo")
-
-  def foldLeft[A, B](as: F[A])(z: B)(f: (B, A) => B): B =
-    sys.error("todo")
-
-  def foldMap[A, B](as: F[A])(f: A => B)(mb: Monoid[B]): B =
-    sys.error("todo")
-
-  def concatenate[A](as: F[A])(m: Monoid[A]): A =
-    sys.error("todo")
-
-  def toList[A](as: F[A]): List[A] =
-    sys.error("todo")
-}
-
-object ListFoldable extends Foldable[List] {
-  override def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B) =
-    sys.error("todo")
-  override def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B) =
-    sys.error("todo")
-  override def foldMap[A, B](as: List[A])(f: A => B)(mb: Monoid[B]): B =
-    sys.error("todo")
-}
-
-object IndexedSeqFoldable extends Foldable[IndexedSeq] {
-  override def foldRight[A, B](as: IndexedSeq[A])(z: B)(f: (A, B) => B) =
-    sys.error("todo")
-  override def foldLeft[A, B](as: IndexedSeq[A])(z: B)(f: (B, A) => B) =
-    sys.error("todo")
-  override def foldMap[A, B](as: IndexedSeq[A])(f: A => B)(mb: Monoid[B]): B =
-    sys.error("todo")
-}
-
-object StreamFoldable extends Foldable[Stream] {
-  override def foldRight[A, B](as: Stream[A])(z: B)(f: (A, B) => B) =
-    sys.error("todo")
-  override def foldLeft[A, B](as: Stream[A])(z: B)(f: (B, A) => B) =
-    sys.error("todo")
-}
-
-sealed trait Tree[+A]
-case class Leaf[A](value: A) extends Tree[A]
-case class Branch[A](left: Tree[A], right: Tree[A]) extends Tree[A]
-
-object TreeFoldable extends Foldable[Tree] {
-  override def foldMap[A, B](as: Tree[A])(f: A => B)(mb: Monoid[B]): B =
-    sys.error("todo")
-  override def foldLeft[A, B](as: Tree[A])(z: B)(f: (B, A) => B) =
-    sys.error("todo")
-  override def foldRight[A, B](as: Tree[A])(z: B)(f: (A, B) => B) =
-    sys.error("todo")
-}
-
-object OptionFoldable extends Foldable[Option] {
-  override def foldMap[A, B](as: Option[A])(f: A => B)(mb: Monoid[B]): B =
-    sys.error("todo")
-  override def foldLeft[A, B](as: Option[A])(z: B)(f: (B, A) => B) =
-    sys.error("todo")
-  override def foldRight[A, B](as: Option[A])(z: B)(f: (A, B) => B) =
-    sys.error("todo")
-}
-
