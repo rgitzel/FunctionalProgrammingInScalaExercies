@@ -10,6 +10,7 @@ shell, which you can fill in and modify while working through the chapter.
 
 trait FirstPropImpl {
   def check: Boolean
+  // TODO: crap! turns out I did this wrong :p it's supposed to return Prop
   def &&(p: FirstPropImpl): Boolean = check && p.check
 }
 
@@ -75,14 +76,24 @@ object Gen {
   }
 
   def sequence[A](gs: List[Gen[A]]): Gen[List[A]] = {
-    gs.foldLeft(unit(List[A]())) { case(genSoFar, g) =>
-      genSoFar.flatMap { list =>
-        // @#$@#$ how combine a List[A] with a Gen[A]?!?!
-        // INSIGHT... just keep flatmapping until we've pulled out all the values for each piece
-        g.flatMap{ a =>
-          Gen.unit(list :+ a)
-        }
-      }
+    gs.foldLeft(unit(List[A]())) { case (genListASoFar, genA) =>
+      //      genSoFar.flatMap { list =>
+      //        // @#$@#$ how combine a List[A] with a Gen[A]?!?!
+      //        // INSIGHT... just keep flatmapping until we've pulled out all the values for each piece
+      //        g.flatMap{ a =>
+      //          Gen.unit(list :+ a)
+      //        }
+      //      }
+
+//      for {
+//        listSoFar <- genListASoFar
+//        a <- genA
+//      }
+//      yield(listSoFar :+ a)
+
+      genListASoFar.flatMap(listSoFar =>
+        genA.map(a => listSoFar :+ a)
+      )
     }
   }
 
