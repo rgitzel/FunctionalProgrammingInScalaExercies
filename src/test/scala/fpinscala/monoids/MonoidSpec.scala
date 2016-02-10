@@ -1,9 +1,9 @@
 package fpinscala.monoids
 
 
-import fpinscala.monoids.Prop.{Proved, Passed, Falsified}
+import fpinscala.monoids.Monoid._
+import fpinscala.monoids.Prop.{Falsified, Passed, Proved}
 import org.scalatest._
-import Monoid._
 
 
 class MonoidSpec extends FlatSpec with Matchers {
@@ -144,22 +144,32 @@ class MonoidSpec extends FlatSpec with Matchers {
 
   // 10.4
 
-  behavior of "monoidLaws for intAddition"
+  behavior of "monoidLaws"
 
 
-  it should "pass" in {
-    val testCases = 100
-    val x = monoidLaws(intAddition, Gen.smallInt).run(100, testCases, RNG.Simple(System.currentTimeMillis))
-    x match {
-      case Falsified(msg, n) =>
-        println(s"! Falsified after $n passed tests:\n $msg")
-      case Passed =>
-        println(s"+ OK, passed $testCases tests.")
-      case Proved =>
-        println(s"+ OK, proved property.")
+  def testMonoidLawsForSimpleTypes[A](m: Monoid[A], name: String, gen: Gen[A], maxSize: Int = 100, testCases: Int = 100): Unit = {
+    it should s"pass for $name" in {
+      val x = monoidLaws(m, gen).run(maxSize, testCases, RNG.Simple(System.currentTimeMillis))
+      x match {
+        case Falsified(msg, n) =>
+          println(s"! Falsified after $n passed tests:\n $msg")
+        case Passed =>
+          println(s"+ OK, $name passed $testCases tests.")
+        case Proved =>
+          println(s"+ OK, proved $name property.")
+      }
+      x.isFalsified should be(false)
     }
-    x.isFalsified should be (false)
   }
+
+  testMonoidLawsForSimpleTypes(intAddition,       "intAddition",        Gen.smallInt)
+  testMonoidLawsForSimpleTypes(intMultiplication, "intMultiplication",  Gen.smallInt)
+  testMonoidLawsForSimpleTypes(booleanAnd,        "booleanAnd",         Gen.boolean)
+  testMonoidLawsForSimpleTypes(booleanOr,         "booleanOr",          Gen.boolean)
+  testMonoidLawsForSimpleTypes(stringMonoid,      "stringMonoid",       Gen.stringN(10))
+
+//  testMonoidLaws(listMonoid,        "listMonoid",         Gen.listOfN(10, Gen.smallInt))
+
 
 
   // 10.5
