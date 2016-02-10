@@ -67,18 +67,21 @@ object Monoid {
 
 
 
-  def aTriple[A](gen: Gen[A]): Gen[(A, A, A)] = {
+  def triplet[A](gen: Gen[A]): Gen[(A, A, A)] = {
     Gen.listOfN(3, gen).map { list =>
       val seq = list.toSeq
       (seq(0), seq(1), seq(2))
     }
   }
 
+  // this works for simple types, at least...
   def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop =
     Prop.forAll(gen)(a => m.op(a, m.zero) == a) &&
     Prop.forAll(gen)(a => m.op(m.zero, a) == a) &&
     Prop.forAll(gen)(a => m.op(m.zero, m.zero) == m.zero) &&
-    Prop.forAll(aTriple(gen))(t => m.op(m.op(t._1, t._2), t._3) == m.op(m.op(t._1, t._2), t._3))
+    Prop.forAll(triplet(gen))(t =>
+      m.op(m.op(t._1, t._2), t._3) == m.op(t._1, m.op(t._2, t._3))
+    )
 
 
 
