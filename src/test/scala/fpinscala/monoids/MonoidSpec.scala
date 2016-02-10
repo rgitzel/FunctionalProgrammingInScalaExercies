@@ -168,7 +168,24 @@ class MonoidSpec extends FlatSpec with Matchers {
   testMonoidLawsForSimpleTypes(booleanOr,         "booleanOr",          Gen.boolean)
   testMonoidLawsForSimpleTypes(stringMonoid,      "stringMonoid",       Gen.stringN(10))
 
-//  testMonoidLaws(listMonoid,        "listMonoid",         Gen.listOfN(10, Gen.smallInt))
+// hmmm, something about this is more complicated... need to tinker some more...
+
+  //  def testMonoidLawsForContainerTypes[A,F[A]](m: Monoid[F[A]], name: String, gen: Gen[F[A]], maxSize: Int = 100, testCases: Int = 100): Unit = {
+  //    it should s"pass for $name" in {
+  //      val x = monoidLaws(m, gen).run(maxSize, testCases, RNG.Simple(System.currentTimeMillis))
+  //      x match {
+  //        case Falsified(msg, n) =>
+  //          println(s"! Falsified after $n passed tests:\n $msg")
+  //        case Passed =>
+  //          println(s"+ OK, $name passed $testCases tests.")
+  //        case Proved =>
+  //          println(s"+ OK, proved $name property.")
+  //      }
+  //      x.isFalsified should be(false)
+  //    }
+  //  }
+
+  //  testMonoidLawsForContainerTypes(listMonoid,     "listMonoid",         Gen.listOfN(10, Gen.smallInt))
 
 
 
