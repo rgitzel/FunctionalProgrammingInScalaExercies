@@ -147,18 +147,18 @@ class MonoidSpec extends FlatSpec with Matchers {
   behavior of "monoidLaws"
 
 
-  def testMonoidLawsForSimpleTypes[A](m: Monoid[A], name: String, gen: Gen[A], maxSize: Int = 100, testCases: Int = 100): Unit = {
+  def testMonoidLawsForSimpleTypes[A](m: Monoid[A], name: String, gen: Gen[A], maxSize: Int = 100, testCases: Int = 1000): Unit = {
     it should s"pass for $name" in {
-      val x = monoidLaws(m, gen).run(maxSize, testCases, RNG.Simple(System.currentTimeMillis))
-      x match {
+      val result = monoidLaws(m, gen).run(maxSize, testCases, RNG.Simple(System.currentTimeMillis))
+      result match {
         case Falsified(msg, n) =>
-          println(s"! Falsified after $n passed tests:\n $msg")
+          println(s"Falsified $name after $n passed tests:\n $msg")
         case Passed =>
-          println(s"+ OK, $name passed $testCases tests.")
+          println(s"$name passed $testCases tests")
         case Proved =>
-          println(s"+ OK, proved $name property.")
+          println(s"proved $name")
       }
-      x.isFalsified should be(false)
+      result.isFalsified should be(false)
     }
   }
 

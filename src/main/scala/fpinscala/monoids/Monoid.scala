@@ -246,7 +246,7 @@ object Monoid {
     }
   }
 
-  // looking at the answer, it's complicated too, but somewhat simpler with
+  // looking at the answer, it's still complicated, but somewhat simpler with
   //  a simpler 'zero'... let's try to implement
   val wcMonoid2: Monoid[WC] = new Monoid[WC] {
     def op(a1: WC, a2: WC): WC =
