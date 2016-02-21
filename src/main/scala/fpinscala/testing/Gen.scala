@@ -55,6 +55,11 @@ object Gen {
     Gen(State(r))
   }
 
+  def int: Gen[Int] = {
+    Gen(State(RNG.int))
+  }
+
+
   def listOfN[A](n: Int, g: Gen[A]): Gen[List[A]] = {
     // I really don't understand what I'm doing here... just letting the compiler guide me :(
     val gs = 1.to(n).map(i => g.sampler.run)

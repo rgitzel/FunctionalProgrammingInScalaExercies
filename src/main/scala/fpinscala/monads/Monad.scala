@@ -1,7 +1,6 @@
 package fpinscala.monads
 
 import fpinscala.parallelism.Par.Par
-import fpinscala.parsing.Parsers
 import fpinscala.testing.Gen
 import language.higherKinds
 import fpinscala.laziness.Stream
@@ -34,10 +33,19 @@ trait Monad[M[_]] extends Functor[M] {
   def map2[A,B,C](ma: M[A], mb: M[B])(f: (A, B) => C): M[C] =
     flatMap(ma)(a => map(mb)(b => f(a, b)))
 
-//  def sequence[A](lma: List[M[A]]): M[List[A]] = ???
-//
-//  def traverse[A,B](la: List[A])(f: A => M[B]): M[List[B]] = ???
-//
+  def sequence[A](lma: List[M[A]]): M[List[A]] =
+    lma.foldLeft(unit(List[A]())){ (mla, ma) =>
+      flatMap(mla){ list =>
+        flatMap(ma) { a =>
+          unit(list :+ a)
+        }
+      }
+    }
+
+  def traverse[A,B](la: List[A])(f: A => M[B]): M[List[B]] =
+    sequence(la.map(f))
+
+
 //  def replicateM[A](n: Int, ma: M[A]): M[List[A]] = ???
 //
 //  def compose[A,B,C](f: A => M[B], g: B => M[C]): A => M[C] = ???

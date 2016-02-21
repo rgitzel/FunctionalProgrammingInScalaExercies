@@ -1,6 +1,8 @@
 package fpinscala.monads
 
 import fpinscala.monads.Monad._
+import fpinscala.testing.Gen
+import fpinscala.state.FixedRNG
 import org.scalatest._
 import fpinscala.laziness.Stream
 
@@ -68,5 +70,51 @@ class MonadSpec extends FlatSpec with Matchers {
 
   it should "flatmap on non-empty list" in {
     listMonad.flatMap(List(1,2,3))(listF) should be (List("1", "2", "2", "3", "3", "3"))
+  }
+
+
+  // 11.3
+
+  behavior of "sequence"
+
+  def testRun[A](g: Gen[A], is: List[Int]): A = g.sampler.run(FixedRNG(is))._1
+
+  it should "work on an empty list of Gens" in {
+    val seq = genMonad.sequence(Nil)
+    testRun(seq, List(12, 13, 14)) should be (Nil)
+  }
+
+  it should "work on lists of Gens" in {
+    val seq = genMonad.sequence(List.fill(3)(Gen.int))
+    testRun(seq, List(12, 13, 14)) should be (List(12, 13, 14))
+  }
+
+  it should "return Some on an empty list of Options" in {
+    optionMonad.sequence(Nil) should be (Some(Nil))
+  }
+
+  it should "return Some on lists of all Somes" in {
+    optionMonad.sequence(List(Some(12), Some(13), Some(14))) should be (Some(List(12, 13, 14)))
+  }
+
+  it should "return None on lists a None" in {
+    optionMonad.sequence(List(Some(12), None, Some(14))) should be (None)
+  }
+
+
+  behavior of "traverse - optionMonad"
+
+  def optionTraverseF(a: Int) = if(a % 2 == 0) Some(a) else None
+
+  it should "return Some(Nil) on Nil" in {
+    optionMonad.traverse(Nil)(optionTraverseF) should be (Some(Nil))
+  }
+
+  it should "return Some if all ints map to Some" in {
+    optionMonad.traverse(List(2, 6, 8))(optionTraverseF) should be (Some(List(2, 6, 8)))
+  }
+
+  it should "return None if at least one int map to None" in {
+    optionMonad.traverse(List(2, 6, 9))(optionTraverseF) should be (None)
   }
 }
