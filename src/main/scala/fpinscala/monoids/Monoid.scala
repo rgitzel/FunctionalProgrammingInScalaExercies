@@ -45,6 +45,7 @@ object Monoid {
   def optionMonoid[A](m: Monoid[A]) = new Monoid[Option[A]] {
     def op(a1: Option[A], a2: Option[A]) =
       (a1, a2) match {
+        // noted during meetup... d'oh! a1.orElse(a2)?
         case (None, o) =>
           o
         case (o, None) =>
@@ -54,11 +55,13 @@ object Monoid {
       }
     val zero = None
   }
+  // we debate the semantics... original meaning is just find the first non None?
 
   def endoMonoid[A]: Monoid[A => A]  = new Monoid[A => A] {
     def op(a1: A => A, a2: A => A) =
       // apply each in succession
       (a: A) => a1(a2(a))
+    // meetup note, should be a2(a1(a)).... use .compose
 
     val zero =
       // plain old identify function
@@ -98,7 +101,7 @@ object Monoid {
     // careful of the order here
     as.foldRight(m.zero){(a, acc) => m.op(f(a), acc)}
 
-
+// I never did get this to work
 //  def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B = {
 //    def toB(a: A) = f(a, z) // no, that's not right, that will put 'z' between every pair of a's; 'z' isn't zero, it's the starting value
 //    val m = new Monoid[B] {

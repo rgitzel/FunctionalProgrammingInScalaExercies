@@ -234,6 +234,7 @@ class MonoidSpec extends FlatSpec with Matchers {
 
   // 10.6 - TODO
 
+  // d'oh! didn't write test, but wrote code?  Huh?
 
   // 10.7
 
