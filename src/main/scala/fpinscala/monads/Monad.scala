@@ -1,6 +1,7 @@
 package fpinscala.monads
 
 import fpinscala.parallelism.Par.Par
+import fpinscala.state.State
 import fpinscala.testing.Gen
 import language.higherKinds
 import fpinscala.laziness.Stream
@@ -36,9 +37,7 @@ trait Monad[M[_]] extends Functor[M] {
   def sequence[A](lma: List[M[A]]): M[List[A]] =
     lma.foldLeft(unit(List[A]())){ (mla, ma) =>
       flatMap(mla){ list =>
-        flatMap(ma) { a =>
-          unit(list :+ a)
-        }
+        map(ma)(list :+ _)
       }
     }
 
@@ -46,13 +45,39 @@ trait Monad[M[_]] extends Functor[M] {
     sequence(la.map(f))
 
 
-//  def replicateM[A](n: Int, ma: M[A]): M[List[A]] = ???
-//
-//  def compose[A,B,C](f: A => M[B], g: B => M[C]): A => M[C] = ???
-//
-//  // Implement in terms of `compose`:
-//  def _flatMap[A,B](ma: M[A])(f: A => M[B]): M[B] = ???
-//
+  def replicateM[A](n: Int, ma: M[A]): M[List[A]] =
+    sequence(List.fill(n)(ma))
+
+  def product[A,B](ma: M[A], mb: M[B]) = map2(ma, mb)((_, _))
+
+  def filterM[A](ms: List[A])(f: A => M[Boolean]): M[List[A]] =
+    ms.foldLeft(unit(List[A]())){ case(mla, a) =>
+      flatMap(f(a)){ b =>
+        if(b)
+          map(mla)(_ :+ a)
+        else
+          mla
+      }
+    }
+
+  def compose[A,B,C](f: A => M[B], g: B => M[C]): A => M[C] =
+    (a: A) => flatMap(f(a)){ b => g(b) }
+
+  // Implement in terms of `compose`:
+  def _flatMap[A,B](ma: M[A])(f: A => M[B]): M[B] = {
+// 1st solution... which cheats because it uses flatmap! and it seems weak to use identity for one of the composed functions
+//    def x(a: A) = compose((a: A) => unit(a), f)(a)
+//    flatMap(ma)(x)
+
+    // we have M[A], how the heck to do we take it apart to get the A??!?!?
+    //  lightbulb!  look at compose signature... it "knows" how to take the output from f and feed it
+    //  to g, which means it knows how to turn M[B] to B!  We don't care how, it just does...
+    // so make the first function return ma, regardless of input... but the input needs to be SOMEthing
+    //  so make it an Int for sake of argument (and no pun intended, the argument value can be anything too)
+    def f1(n: Int) = ma
+    compose[Int,A,B](f1, f)(1) // don't need the type signature, just putting it in for clarity
+  }
+
 //  def join[A](mma: M[M[A]]): M[A] = ???
 //
 //  // Implement in terms of `join`:
@@ -90,7 +115,11 @@ object Monad {
       ma flatMap f
   }
 
-//  def stateMonad[S] = ???
+//  def stateMonad[S,A] = new Monad[State[S,A]] {
+//    def unit[A](a: => A): List[A] = List(a)
+//    def flatMap[A,B](ma: List[A])(f: A => List[B]) =
+//      ma flatMap f
+//  }
 
 //  val idMonad: Monad[Id] = ???
 

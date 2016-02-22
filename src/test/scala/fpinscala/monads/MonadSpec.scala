@@ -24,7 +24,7 @@ class MonadSpec extends FlatSpec with Matchers {
 
   behavior of "Monad[Option]"
 
-  val optionF = (a: Int) => Some(a + 2)
+  def optionF(a: Int): Option[Int] = Some(a + 2)
 
   it should "build a some with unit" in {
     optionMonad.unit(23) should be (Some(23))
@@ -77,16 +77,17 @@ class MonadSpec extends FlatSpec with Matchers {
 
   behavior of "sequence"
 
-  def testRun[A](g: Gen[A], is: List[Int]): A = g.sampler.run(FixedRNG(is))._1
+  // copied from the 'state' chapter... execute a Gen using a fixed set of 'random' ints
+  def testRunGen[A](g: Gen[A], is: List[Int]): A = g.sampler.run(FixedRNG(is))._1
 
   it should "work on an empty list of Gens" in {
     val seq = genMonad.sequence(Nil)
-    testRun(seq, List(12, 13, 14)) should be (Nil)
+    testRunGen(seq, List(12, 13, 14)) should be (Nil)
   }
 
   it should "work on lists of Gens" in {
     val seq = genMonad.sequence(List.fill(3)(Gen.int))
-    testRun(seq, List(12, 13, 14)) should be (List(12, 13, 14))
+    testRunGen(seq, List(12, 13, 14)) should be (List(12, 13, 14))
   }
 
   it should "return Some on an empty list of Options" in {
@@ -117,4 +118,113 @@ class MonadSpec extends FlatSpec with Matchers {
   it should "return None if at least one int map to None" in {
     optionMonad.traverse(List(2, 6, 9))(optionTraverseF) should be (None)
   }
+
+
+  behavior of "traverse - genMonad"
+
+  def genTraverseF(a: Int) = Gen.listOfN(a, Gen.int)
+
+  it should "work on an empty list" in {
+    val tr = genMonad.traverse(Nil)(genTraverseF)
+    testRunGen(tr, List(1, 2, 3)) should be (Nil)
+  }
+
+  it should "work on non-empty list to Gen[List[Int]]" in {
+    val tr = genMonad.traverse(List(1, 3, 2))(genTraverseF)
+    testRunGen(tr, List(4, 5, 6, 7, 8, 9, 10)) should be (List(List(4), List(5, 6, 7), List(8, 9)))
+  }
+
+
+  // 11.4
+
+  behavior of "replicateN - genMonad"
+
+  it should "generate empty lists for 0" in {
+    testRunGen(genMonad.replicateM(0, Gen.int), List()) should be (List())
+  }
+
+  it should "generate lists for non-zero" in {
+    testRunGen(genMonad.replicateM(3, Gen.int), List(1, 2, 3, 4)) should be (List(1, 2, 3))
+  }
+
+
+  // 11.5
+
+  behavior of "replicateN - optionMonad"
+
+  it should "generate empty lists for 0" in {
+    optionMonad.replicateM(0, Some(1)) should be (Some(Nil))
+  }
+
+  it should "generate lists for non-zero" in {
+    optionMonad.replicateM(3, Some(1)) should be (Some(List(1, 1, 1)))
+  }
+
+
+  behavior of "replicateN - listMonad"
+
+  it should "generate empty lists for 0" in {
+    listMonad.replicateM(0, List(1)) should be (List(Nil))
+  }
+
+  it should "generate lists for non-zero" in {
+    listMonad.replicateM(3, List(1)) should be (List(List(1, 1, 1)))
+  }
+
+
+  // 11.6
+
+  behavior of "filterM - optionMonad"
+
+  def optionFilterF(a: Int): Option[Boolean] = Some(a).map(_ % 2 == 0)
+
+  it should "be Some(Nil) for empty list" in {
+    optionMonad.filterM(List())(optionFilterF) should be (Some(Nil))
+  }
+
+  it should "keep even numbers" in {
+    optionMonad.filterM(List(1,2,3))(optionFilterF) should be (Some(List(2)))
+  }
+
+  it should "be Some(nil) for all failed" in {
+    optionMonad.filterM(List(1,5,3))(optionFilterF) should be (Some(Nil))
+  }
+
+
+  // 11.7
+
+  behavior of "compose - options"
+
+  it should "combine both functions" in {
+    def f(a: Int): Option[Boolean] = optionFilterF(a)
+    def g(b: Boolean): Option[String] = if (b) Some("even") else Some("odd")
+    optionMonad.compose(f, g)(1) should be (Some("odd"))
+  }
+
+
+  // 11.8
+
+  behavior of "_flatmap - options"
+
+
+  it should "return none for none" in {
+    optionMonad._flatMap(None)(optionF) should be (None)
+  }
+
+  it should "return some for some" in {
+    optionMonad._flatMap(Some(3))(optionF) should be (Some(5))
+  }
+
+
+
+  behavior of "_flatmap - list"
+
+  it should "return nil for nil" in {
+    listMonad._flatMap(Nil)(listF) should be (Nil)
+  }
+
+  it should "flatmap on non-empty list" in {
+    listMonad._flatMap(List(1, 2, 3))(listF) should be (List("1", "2", "2", "3", "3", "3"))
+  }
+
 }
