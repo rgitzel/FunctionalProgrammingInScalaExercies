@@ -227,4 +227,90 @@ class MonadSpec extends FlatSpec with Matchers {
     listMonad._flatMap(List(1, 2, 3))(listF) should be (List("1", "2", "2", "3", "3", "3"))
   }
 
+
+  // 11.10
+
+  // compose(f, unit)               == f
+  // (a: A) => flatMap(f(a))(unit)  == f
+  //   replace f(a) with x... is that valid?
+  // flatMap(x)(unit)               == x
+
+
+  // 11.11
+
+  behavior of "identify for lists"
+
+  // something non trivial Int => List[Int]
+  def listIdentityF(n: Int) = List.fill(n)(n)
+
+  // need this to deal with the lazy param that compose doesn't like
+  def listNonLazyUnit(i: Int) = listMonad.unit(i)
+
+  it should "compose with second arg unit" in {
+    listMonad.compose(listIdentityF, listNonLazyUnit)(5) should be (listIdentityF(5))
+  }
+
+  it should "compose with first arg unit" in {
+    listMonad.compose(listNonLazyUnit, listIdentityF)(5) should be (listIdentityF(5))
+  }
+
+  // 11.12
+
+  behavior of "join"
+
+  it should "work on lists" in {
+    listMonad.join(List(List(7))) should be (List(7))
+  }
+
+
+  // 11.13
+
+
+  // yes, I should not be just copying these tests, by this point, I should be coming up with
+  //  a way to specify them once...
+// this doesn't seem to work :(
+//  def testFlatMapImpl[M[_],A,B]( (ma: M[A])(f: A => M[B]) => M[B]) {
+//  }
+
+
+
+  behavior of "__flatmap - options"
+
+  it should "return none for none" in {
+    optionMonad.__flatMap(None)(optionF) should be (None)
+  }
+
+  it should "return some for some" in {
+    optionMonad.__flatMap(Some(3))(optionF) should be (Some(5))
+  }
+
+  behavior of "__flatmap - list"
+
+  it should "return nil for nil" in {
+    listMonad.__flatMap(Nil)(listF) should be (Nil)
+  }
+
+  it should "flatmap on non-empty list" in {
+    listMonad.__flatMap(List(1, 2, 3))(listF) should be (List("1", "2", "2", "3", "3", "3"))
+  }
+
+
+  // 11.14
+
+  // hmmm...
+
+  // for Par, associativity means the order of execution, time-wise, doesn't matter?
+
+  // not sure for Parser... formats don't matter? But I didn't do that chapter, so I'm probably missing something.
+
+
+  // 11.16
+
+  // Gen's unit simply generates the parameter, so within compose it just echos back the value given
+  // List's unit is just a List of the parameter... so again it's just an echo?
+
+  // not sure where they are going with these questions.
+
+
+  
 }

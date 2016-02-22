@@ -71,17 +71,22 @@ trait Monad[M[_]] extends Functor[M] {
 
     // we have M[A], how the heck to do we take it apart to get the A??!?!?
     //  lightbulb!  look at compose signature... it "knows" how to take the output from f and feed it
-    //  to g, which means it knows how to turn M[B] to B!  We don't care how, it just does...
+    //  to g, which means it "knows" how to turn M[B] to B!  We don't know or care *how*, it just does...
     // so make the first function return ma, regardless of input... but the input needs to be SOMEthing
     //  so make it an Int for sake of argument (and no pun intended, the argument value can be anything too)
     def f1(n: Int) = ma
     compose[Int,A,B](f1, f)(1) // don't need the type signature, just putting it in for clarity
   }
 
-//  def join[A](mma: M[M[A]]): M[A] = ???
-//
-//  // Implement in terms of `join`:
-//  def __flatMap[A,B](ma: M[A])(f: A => M[B]): M[B] = ???
+  def join[A](mma: M[M[A]]): M[A] =
+    flatMap(mma) { ma =>
+      // really? that's it?
+      ma
+    }
+
+   // Implement in terms of `join`:
+  def __flatMap[A,B](ma: M[A])(f: A => M[B]): M[B] =
+    join(map(ma){ a => f(a) })
 }
 
 case class Reader[R, A](run: R => A)
