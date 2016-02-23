@@ -2,7 +2,7 @@ package fpinscala.monads
 
 import fpinscala.monads.Monad._
 import fpinscala.testing.Gen
-import fpinscala.state.FixedRNG
+import fpinscala.state.{RNG, State, FixedRNG}
 import org.scalatest._
 import fpinscala.laziness.Stream
 
@@ -312,5 +312,60 @@ class MonadSpec extends FlatSpec with Matchers {
   // not sure where they are going with these questions.
 
 
-  
+  // 11.17
+
+  behavior of "Id"
+
+  it should "map to the function's value" in {
+    Id(12).map{ i => i.toString } should be (Id("12"))
+  }
+
+  it should "flatMap to the function's value" in {
+    Id(12).flatMap{ i => Id(i.toString) } should be (Id("12"))
+  }
+
+  behavior of "idMonad"
+
+  it should "unit to itself" in {
+    idMonad.unit(12) should be (Id(12))
+  }
+
+  it should "flatmap to the function's value" in {
+    idMonad.flatMap(Id(12)){ i => Id(i.toString) } should be (Id("12"))
+  }
+
+
+  // 11.18
+
+  // yeah the test names bite, here... this test flavour doesn't quite suit the problem... I'm sure you can understand
+
+  behavior of "experiment with stateMonad"
+
+  val st = State(RNG.nonNegativeInt)
+  val st2 = State(RNG.int)
+
+  def testRunState[T](st: State[RNG,T], rngs: List[Int]) =
+    st.run(FixedRNG(rngs))._1
+
+  val rngs = List(-5,6,-7,3,-6,8,-9)
+
+  it should "state should generate a single value on its own" in {
+    testRunState(st2, rngs) should be (-5)
+  }
+
+  it should "replicateM should generate lists of N values" in {
+    val r = stateMonad.replicateM(5, st)
+    testRunState(r, rngs) should be (List(4, 6, 6, 3, 5))
+  }
+
+  it should "map2 should combine two states" in {
+    val r = stateMonad.map2(st, st2){ (a, b) => (a - b).toString}
+    testRunState(r, rngs) should be ("-2")
+  }
+
+  it should "sequence should combine a bunch of states into one state the generates a bunch of values" in {
+    val r = stateMonad.sequence(List(st, st2, st2, st))
+    testRunState(r, rngs) should be (List(4, 6, -7, 3))
+  }
+
 }

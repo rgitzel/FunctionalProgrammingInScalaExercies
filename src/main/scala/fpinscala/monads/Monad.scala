@@ -120,20 +120,32 @@ object Monad {
       ma flatMap f
   }
 
+// nope...
 //  def stateMonad[S,A] = new Monad[State[S,A]] {
 //    def unit[A](a: => A): List[A] = List(a)
 //    def flatMap[A,B](ma: List[A])(f: A => List[B]) =
 //      ma flatMap f
 //  }
 
-//  val idMonad: Monad[Id] = ???
+  // copied from book
+  def stateMonad[S,A] = new Monad[({type f[x] = State[S,x]})#f] {
+    def unit[A](a: => A): State[S,A] = State(s => (a, s))
+    def flatMap[A,B](st: State[S,A])(f: A => State[S,B]): State[S,B] =
+      st flatMap f
+  }
+
+  val idMonad: Monad[Id] = new Monad[Id] {
+    def unit[A](a: => A): Id[A] = Id(a)
+    def flatMap[A,B](ma: Id[A])(f: A => Id[B]) =
+      ma flatMap f
+  }
 
 //  def readerMonad[R] = ???
 }
 
 case class Id[A](value: A) {
-  def map[B](f: A => B): Id[B] = ???
-  def flatMap[B](f: A => Id[B]): Id[B] = ???
+  def map[B](f: A => B): Id[B] = Id(f(value))
+  def flatMap[B](f: A => Id[B]): Id[B] = f(value)
 }
 
 object Reader {
