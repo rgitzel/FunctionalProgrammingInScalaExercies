@@ -89,8 +89,6 @@ trait Monad[M[_]] extends Functor[M] {
     join(map(ma){ a => f(a) })
 }
 
-case class Reader[R, A](run: R => A)
-
 object Monad {
   val genMonad = new Monad[Gen] {
     def unit[A](a: => A): Gen[A] = Gen.unit(a)
@@ -128,11 +126,26 @@ object Monad {
 //  }
 
   // copied from book
-  def stateMonad[S,A] = new Monad[({type f[x] = State[S,x]})#f] {
+  def stateMonad[S] = new Monad[({type f[x] = State[S,x]})#f] {
     def unit[A](a: => A): State[S,A] = State(s => (a, s))
     def flatMap[A,B](st: State[S,A])(f: A => State[S,B]): State[S,B] =
       st flatMap f
   }
+
+  // copied from answers
+  def getState[S]: State[S,S] = State(s => (s,s))
+  def setState[S](s: S): State[S,Unit] = State(_ => ((),s))
+
+  val F = stateMonad[Int]
+  def zipWithIndex[A](as: List[A]): List[(Int,A)] =
+    as.foldLeft(F.unit(List[(Int, A)]()))(
+      (acc,a) => for {
+        xs <- acc
+        n <- getState     // wtf? what is this referencing???
+        _ <- setState(n + 1)
+      } yield (n, a) :: xs
+    ).run(0)._1.reverse
+
 
   val idMonad: Monad[Id] = new Monad[Id] {
     def unit[A](a: => A): Id[A] = Id(a)
@@ -146,12 +159,5 @@ object Monad {
 case class Id[A](value: A) {
   def map[B](f: A => B): Id[B] = Id(f(value))
   def flatMap[B](f: A => Id[B]): Id[B] = f(value)
-}
-
-object Reader {
-  def readerMonad[R] = new Monad[({type f[x] = Reader[R,x]})#f] {
-    def unit[A](a: => A): Reader[R,A] = ???
-    override def flatMap[A,B](st: Reader[R,A])(f: A => Reader[R,B]): Reader[R,B] = ???
-  }
 }
 
