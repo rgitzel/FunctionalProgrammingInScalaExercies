@@ -10,24 +10,29 @@ trait Applicative[F[_]] extends Functor[F] {
   def map2[A,B,C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C]
 
   def map3[A,B,C,D](fa: F[A], fb: F[B], fc: F[C])(f: (A, B, C) => D): F[D] = {
-    val fab = map2(fa, fb){ case(a, b) =>
+    // start with F[A] and F[B]
+    val fcd = map2(fa, fb){ case(a, b) =>
       f.curried(a)(b)
     }
-    map2(fab, fc){ case (ab, c) =>
-      ab(c)
+    // now we have F[C=>D] and F[C]
+    map2(fcd, fc){ case (cToD, c) =>
+      cToD(c)
     }
   }
 
   def map4[A,B,C,D,E](fa: F[A], fb: F[B], fc: F[C], fd: F[D])(f: (A, B, C, D) => E): F[E] = {
-    val fabc = map3(fa, fb, fc){ case(a, b, c) =>
+    val fde = map3(fa, fb, fc){ case(a, b, c) =>
       f.curried(a)(b)(c)
     }
-    map2(fabc, fd){ case (abc, d) =>
-      abc(d)
+    // now we have F[D=>E] and F[D]
+    map2(fde, fd){ case (dToE, d) =>
+      dToE(d)
     }
   }
 
-  def apply[A,B](fab: F[A => B])(fa: F[A]): F[B] = ???
+  def apply[A,B](fab: F[A => B])(fa: F[A]): F[B] =
+    // weird-looking syntax, yes...
+    map2(fab, fa){ _(_) }
 
   def unit[A](a: => A): F[A]
 

@@ -64,6 +64,20 @@ class ApplicativeSpec extends FlatSpec with Matchers {
 
   // 12.2
 
+  behavior of "apply - options"
+
+  def aToB(a: Int) = (a+1).toString
+
+  it should "work" in {
+    // weird, either I have to put the '_' after aToB, or put [Int,String] after 'apply'
+    optionApplicative.apply(Some(aToB _))(Some(6)) should be (Some("7"))
+  }
+
+
+
+
+  // 12.3
+
   behavior of "map3 for options"
 
   def sum3(a: Int, b: Int, c: Int) = a + b + c
@@ -73,7 +87,7 @@ class ApplicativeSpec extends FlatSpec with Matchers {
   }
 
 
-  behavior of "map3 for options"
+  behavior of "map4 for options"
 
   def sum4(a: Int, b: Int, c: Int, d: Int) = a + b + c + d
 
