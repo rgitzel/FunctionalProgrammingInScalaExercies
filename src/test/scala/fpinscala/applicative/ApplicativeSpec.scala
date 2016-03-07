@@ -2,6 +2,8 @@ package fpinscala.applicative
 
 import org.scalatest._
 import Applicative._
+import EitherMonad._
+
 
 class ApplicativeSpec extends FlatSpec with Matchers {
 
@@ -95,4 +97,64 @@ class ApplicativeSpec extends FlatSpec with Matchers {
     optionApplicative.map4(Some(1), Some(2), Some(3), Some(4))(sum4) should be (Some(10))
   }
 
+
+
+  // 12.4 ... this problem is classed 'hard'? it's just n-ways zip?
+
+  behavior of "sequence for streams"
+
+  it should "zip them all" in {
+    val a = streamApplicative.unit('a')
+    val b = streamApplicative.unit('b')
+    val c = streamApplicative.unit('c')
+
+    val n = 5
+
+    val expected = List.fill(n)(List('a', 'b', 'c'))
+
+    val seq = streamApplicative.sequence(List(a, b, c)).take(n).toList should be (expected)
+  }
+
+
+  // 12.5
+
+  behavior of "'Either' monad"
+
+  def eF(i: Int) = if(i < 0) Left("negative") else Right(i+1)
+
+  it should "produce a useful unit" in {
+    eitherMonad.unit(1) should be (Right(1))
+  }
+
+  it should "flatmap stay left on left" in {
+    eitherMonad.flatMap(Left("bad"))(eF) should be (Left("bad"))
+  }
+
+  it should "flatmap stay right on right" in {
+    eitherMonad.flatMap(Right(1))(eF) should be (Right(2))
+  }
+
+  it should "flatmap veer left on negative right" in {
+    eitherMonad.flatMap(Right(-1))(eF) should be (Left("negative"))
+  }
+
+
+  // 12.7 - uh... maybe later, I'm not much for proofs
+
+
+  // 12.8 - uh... I am really not sure about these next couple, where did all the Applicative[G] stuff come from?
+  // 12.9
+
+
+  // 12.12
+
+  behavior of "sequenceMap for options"
+
+  it should "map empty to empty" in {
+    optionApplicative.sequenceMap(Map()) should be (Some(Map()))
+  }
+
+  it should "map non-empty" in {
+    optionApplicative.sequenceMap(Map('a' -> Some(1), 'b' -> Some(2))) should be (Some(Map('a' -> 1, 'b' -> 2)))
+  }
 }

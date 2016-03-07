@@ -1,7 +1,7 @@
 package fpinscala.applicative
 
-import fpinscala.monads.Functor
-import fpinscala.monoids.Monoid
+import fpinscala.monads.{Monad, Functor}
+import fpinscala.state.State
 
 import scala.language.{higherKinds, implicitConversions}
 
@@ -55,13 +55,22 @@ trait Applicative[F[_]] extends Functor[F] {
     else
       map2(fa, replicateM(n - 1, fa))(_ +: _)
 
-  def factor[A,B](fa: F[A], fb: F[B]): F[(A,B)] = ???
 
-  //def product[G[_]](G: Applicative[G]): Applicative[({type f[x] = (F[x], G[x])})#f] = ???
+  // okay wait what? how is this different from previous 'product' other than fancy signature?
+  //  I think they missed a step somewhere
+  //def productFancy[G[_]](G: Applicative[G]): Applicative[({type f[x] = (F[x],G[x])})#f] = ???
+
+
+  def factor[A,B](fa: F[A], fb: F[B]): F[(A,B)] = ???
 
   def compose[G[_]](G: Applicative[G]): Applicative[({type f[x] = F[G[x]]})#f] = ???
 
-  def sequenceMap[K,V](ofa: Map[K,F[V]]): F[Map[K,V]] = ???
+  def sequenceMap[K,V](ofa: Map[K,F[V]]): F[Map[K,V]] =
+    ofa.toList.foldLeft(unit(Map[K,V]())){ case (fm, (k, fv)) =>
+        map2(fm, fv){ case (m, v) =>
+          m ++ Map(k -> v)
+        }
+      }
 }
 
 object Applicative {
@@ -83,6 +92,28 @@ object Applicative {
       } yield f(a, b)
   }
 
+
+  val streamApplicative = new Applicative[Stream] {
+
+    def unit[A](a: => A): Stream[A] =
+      Stream.continually(a) // The infinite, constant stream
+
+    override def map2[A,B,C](a: Stream[A], b: Stream[B])( // Combine elements pointwise
+                                                          f: (A,B) => C): Stream[C] =
+      a zip b map f.tupled
+  }
+
+
+  //  def validationApplicative[E]: Applicative[({type f[x] = Validation[E,x]})#f] = ???
+  //
+  //  type Const[A, B] = A
+  //
+  //  implicit def monoidApplicative[M](M: Monoid[M]) =
+  //    new Applicative[({ type f[x] = Const[M, x] })#f] {
+  //      def unit[A](a: => A): M = M.zero
+  //      override def apply[A,B](m1: M)(m2: M): M = M.op(m1, m2)
+  //    }
+
 }
 
 
@@ -99,51 +130,31 @@ object Applicative {
 //  override def apply[A,B](mf: F[A => B])(ma: F[A]): F[B] =
 //    flatMap(mf)(f => map(ma)(a => f(a)))
 //}
-//
-//object Monad {
-//  def eitherMonad[E]: Monad[({type f[x] = Either[E, x]})#f] = ???
-//
-//  def stateMonad[S] = new Monad[({type f[x] = State[S, x]})#f] {
-//    def unit[A](a: => A): State[S, A] = State(s => (a, s))
-//    override def flatMap[A,B](st: State[S, A])(f: A => State[S, B]): State[S, B] =
-//      st flatMap f
-//  }
+
+
+object EitherMonad {
+  def eitherMonad[E] = new Monad[({type f[x] = Either[E, x]})#f] {
+    def unit[A](a: => A): Either[E, A] = Right(a)
+    def flatMap[A,B](either: Either[E, A])(f: A => Either[E, B]): Either[E, B] =
+      either match {
+        case Right(a) =>
+          f(a)
+        case Left(e) =>
+          Left(e)
+      }
+  }
+
+  def stateMonad[S] = new Monad[({type f[x] = State[S, x]})#f] {
+    def unit[A](a: => A): State[S, A] = State(s => (a, s))
+    override def flatMap[A,B](st: State[S, A])(f: A => State[S, B]): State[S, B] =
+      st flatMap f
+  }
 //
 //  def composeM[F[_],N[_]](implicit F: Monad[F], N: Monad[N], T: Traverse[N]):
 //  Monad[({type f[x] = F[N[x]]})#f] = ???
-//}
-//
-//sealed trait Validation[+E, +A]
-//
-//case class Failure[E](head: E, tail: Vector[E])
-//  extends Validation[E, Nothing]
-//
-//case class Success[A](a: A) extends Validation[Nothing, A]
-//
-//
-//object Applicative {
-//
-//  val streamApplicative = new Applicative[Stream] {
-//
-//    def unit[A](a: => A): Stream[A] =
-//      Stream.continually(a) // The infinite, constant stream
-//
-//    override def map2[A,B,C](a: Stream[A], b: Stream[B])( // Combine elements pointwise
-//                                                          f: (A,B) => C): Stream[C] =
-//      a zip b map f.tupled
-//  }
-//
-//  def validationApplicative[E]: Applicative[({type f[x] = Validation[E,x]})#f] = ???
-//
-//  type Const[A, B] = A
-//
-//  implicit def monoidApplicative[M](M: Monoid[M]) =
-//    new Applicative[({ type f[x] = Const[M, x] })#f] {
-//      def unit[A](a: => A): M = M.zero
-//      override def apply[A,B](m1: M)(m2: M): M = M.op(m1, m2)
-//    }
-//}
-//
+}
+
+
 //trait Traverse[F[_]] extends Functor[F] with Foldable[F] {
 //  def traverse[G[_]:Applicative,A,B](fa: F[A])(f: A => G[B]): G[F[B]] =
 //    sequence(map(fa)(f))
