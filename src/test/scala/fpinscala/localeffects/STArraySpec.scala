@@ -31,7 +31,7 @@ class STArraySpec extends FlatSpec with Matchers {
             _ <- array.write(i, 2 * x)
           } yield ()
         }
-      
+
         result <- array.freeze
       } yield result
     })
